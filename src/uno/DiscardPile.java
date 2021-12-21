@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Stack;
 
 /**
- * A discard pile. Only allows valid plays to be placed on top of the pile.
+ * A discard pile.
  */
 public class DiscardPile {
     /*
@@ -54,13 +54,12 @@ public class DiscardPile {
     }
 
     /**
-     * Attempt to play a card to the discard pile.
+     * Check if a card is playable to the discard pile.
      *
-     * @param card the card to play
-     * @return true if the card was successfully played and added to the discard
-     * pile, and false otherwise.
+     * @param card the card to check, not null
+     * @return true if the card is playable and false otherwise
      */
-    boolean playCard(@NotNull Card card) {
+    boolean isPlayable(@NotNull Card card) {
         Card topCard = peek();
         boolean playable = false;
         if (card.color() == CardColor.WILD) {
@@ -75,9 +74,16 @@ public class DiscardPile {
                 playable = true;
             }
         }
-        if (playable) {
-            cardStack.push(card);
-        }
         return playable;
+    }
+
+    /**
+     * Play a card to the discard pile. The card should be checked using
+     * {@code isPlayable()} before calling this method.
+     *
+     * @param card the card to play, not null
+     */
+    void playCard(@NotNull Card card) {
+        cardStack.push(card);
     }
 }
