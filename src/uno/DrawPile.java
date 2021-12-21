@@ -2,6 +2,7 @@ package uno;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Stack;
 
@@ -50,12 +51,12 @@ class DrawPile {
     }
 
     /**
-     * Add a list of cards to the draw pile.
+     * Add a collection of cards to the draw pile.
      *
-     * @param addList list of cards to add, not null
+     * @param cards cards to add, not null
      */
-    void addCardList(@NotNull Stack<Card> addList) {
-        cardStack.addAll(addList);
+    void addCards(@NotNull Collection<Card> cards) {
+        cardStack.addAll(cards);
     }
 
     /**
