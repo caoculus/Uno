@@ -12,6 +12,10 @@ enum CardColor {
 
     private final String string;
 
+    /**
+     * Create a new card color.
+     * @param string String to print for this card color
+     */
     CardColor(String string) {
         this.string = string;
     }

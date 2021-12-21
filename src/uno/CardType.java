@@ -24,6 +24,13 @@ enum CardType {
     private final int freq;
     private final boolean isWild;
 
+    /**
+     * Create a new card type.
+     *
+     * @param string String to print for this card type
+     * @param freq number of cards of this card type in a given color
+     * @param isWild whether this card type is wild
+     */
     CardType(String string, int freq, boolean isWild) {
         this.string = string;
         this.freq = freq;
