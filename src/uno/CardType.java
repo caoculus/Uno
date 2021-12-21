@@ -14,9 +14,9 @@ enum CardType {
     SEVEN("7", 2, false, 7),
     EIGHT("8", 2, false, 8),
     NINE("9", 2, false, 9),
+    DRAW_TWO("Draw Two", 2, false, 20),
     REVERSE("Reverse", 2, false, 20),
     SKIP("Skip", 2, false, 20),
-    DRAW_TWO("Draw Two", 2, false, 20),
     WILD("Wild", 4, true, 50),
     WILD_DRAW_FOUR("Wild Draw Four", 4, true, 50);
 
