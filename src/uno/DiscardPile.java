@@ -4,8 +4,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 import java.util.Stack;
 
 /**
@@ -37,15 +35,12 @@ class DiscardPile {
     }
 
     /**
-     * Check the top card of the discard pile.
+     * Check the top card of the discard pile, requires that the discard pile
+     * is not empty.
      *
      * @return the card on the top of the discard pile
-     * @throws IllegalStateException if the discard pile is empty
      */
     Card peek() {
-        if (cardStack.isEmpty()) {
-            throw new IllegalStateException("Discard pile is empty.");
-        }
         return cardStack.peek();
     }
 
@@ -57,16 +52,13 @@ class DiscardPile {
     }
 
     /**
-     * Check if a card is playable to the discard pile.
+     * Check if a card is playable to the discard pile, requires that the
+     * discard pile is not empty.
      *
      * @param card the card to check, not null
      * @return true if the card is playable and false otherwise
-     * @throws IllegalStateException if the discard pile is empty
      */
     boolean isPlayable(@NotNull Card card) {
-        if (cardStack.isEmpty()) {
-            throw new IllegalStateException("Discard pile is empty.");
-        }
         Card topCard = cardStack.peek();
         boolean playable = false;
         if (card.color() == CardColor.WILD) {
@@ -105,15 +97,12 @@ class DiscardPile {
     }
 
     /**
-     * Clears all cards except the top card from the discard pile.
+     * Clears all cards except the top card from the discard pile, requires
+     * that the discard pile is not empty.
      *
      * @return cards that were removed
-     * @throws IllegalStateException if the discard pile is empty
      */
     Collection<Card> clearExceptTop() {
-        if (cardStack.isEmpty()) {
-            throw new IllegalStateException("Discard pile is empty.");
-        }
         Card topCard = cardStack.pop();
         Collection<Card> oldCards = clear();
         cardStack.push(topCard);
