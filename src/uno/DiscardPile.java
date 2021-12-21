@@ -3,6 +3,8 @@ package uno;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Stack;
 
@@ -19,7 +21,7 @@ class DiscardPile {
     /**
      * Stack representing the cards in the pile.
      */
-    private final Stack<Card> cardStack;
+    private Stack<Card> cardStack;
     /**
      * The active color of the pile, only applies when the color of the top
      * card is {@code CardColor.WILD}.
@@ -38,9 +40,12 @@ class DiscardPile {
      * Check the top card of the discard pile.
      *
      * @return the card on the top of the discard pile
-     * @throws java.util.EmptyStackException if the discard pile is empty
+     * @throws IllegalStateException if the discard pile is empty
      */
     Card peek() {
+        if (cardStack.isEmpty()) {
+            throw new IllegalStateException("Discard pile is empty.");
+        }
         return cardStack.peek();
     }
 
@@ -56,8 +61,12 @@ class DiscardPile {
      *
      * @param card the card to check, not null
      * @return true if the card is playable and false otherwise
+     * @throws IllegalStateException if the discard pile is empty
      */
     boolean isPlayable(@NotNull Card card) {
+        if (cardStack.isEmpty()) {
+            throw new IllegalStateException("Discard pile is empty.");
+        }
         Card topCard = cardStack.peek();
         boolean playable = false;
         if (card.color() == CardColor.WILD) {
@@ -87,24 +96,27 @@ class DiscardPile {
     /**
      * Clears all cards from the discard pile.
      *
-     * @return list of cards that were removed
+     * @return cards that were removed
      */
-    List<Card> clear() {
-        List<Card> cardList = new ArrayList<>(cardStack);
-        cardStack.clear();
-        return cardList;
+    Collection<Card> clear() {
+        Collection<Card> oldCards = cardStack;
+        cardStack = new Stack<>();
+        return oldCards;
     }
 
     /**
      * Clears all cards except the top card from the discard pile.
      *
-     * @return list of cards that were removed
-     * @throws java.util.EmptyStackException if the discard pile was empty
+     * @return cards that were removed
+     * @throws IllegalStateException if the discard pile is empty
      */
-    List<Card> clearExceptTop() {
+    Collection<Card> clearExceptTop() {
+        if (cardStack.isEmpty()) {
+            throw new IllegalStateException("Discard pile is empty.");
+        }
         Card topCard = cardStack.pop();
-        List<Card> cardList = clear();
+        Collection<Card> oldCards = clear();
         cardStack.push(topCard);
-        return cardList;
+        return oldCards;
     }
 }
