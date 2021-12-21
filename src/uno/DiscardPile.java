@@ -2,6 +2,8 @@ package uno;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Stack;
 
 /**
@@ -56,7 +58,7 @@ class DiscardPile {
      * @return true if the card is playable and false otherwise
      */
     boolean isPlayable(@NotNull Card card) {
-        Card topCard = peek();
+        Card topCard = cardStack.peek();
         boolean playable = false;
         if (card.color() == CardColor.WILD) {
             playable = true;
@@ -80,5 +82,29 @@ class DiscardPile {
      */
     void addCard(@NotNull Card card) {
         cardStack.push(card);
+    }
+
+    /**
+     * Clears all cards from the discard pile.
+     *
+     * @return list of cards that were removed
+     */
+    List<Card> clear() {
+        List<Card> cardList = new ArrayList<>(cardStack);
+        cardStack.clear();
+        return cardList;
+    }
+
+    /**
+     * Clears all cards except the top card from the discard pile.
+     *
+     * @return list of cards that were removed
+     * @throws java.util.EmptyStackException if the discard pile was empty
+     */
+    List<Card> clearExceptTop() {
+        Card topCard = cardStack.pop();
+        List<Card> cardList = clear();
+        cardStack.push(topCard);
+        return cardList;
     }
 }
