@@ -2,6 +2,8 @@ package uno;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 import java.util.TreeSet;
@@ -28,9 +30,9 @@ public class Hand {
     }
 
     /**
-     * @return the set of cards in the player hand
+     * @return cards in the player hand, in sorted order
      */
-    Set<Card> getCardSet() {
+    Collection<Card> getCards() {
         return Collections.unmodifiableSet(cardSet);
     }
 
@@ -53,6 +55,17 @@ public class Hand {
     }
 
     /**
+     * Clear all cards from the hand.
+     *
+     * @return cards that were removed
+     */
+    Collection<Card> clear() {
+        Collection<Card> oldCards = new ArrayList<>(cardSet);
+        cardSet.clear();
+        return oldCards;
+    }
+
+    /**
      * Check if the player hand contains a card of a specified color.
      *
      * @param color color to check for
@@ -66,5 +79,16 @@ public class Hand {
             }
         }
         return false;
+    }
+
+    /**
+     * @return the total point value of all cards in the hand
+     */
+    int getHandValue() {
+        int value = 0;
+        for (Card card : cardSet) {
+            value += card.type().getValue();
+        }
+        return value;
     }
 }
