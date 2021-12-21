@@ -21,7 +21,7 @@ class DiscardPile {
     /**
      * Stack representing the cards in the pile.
      */
-    private Stack<Card> cardStack;
+    private final Stack<Card> cardStack;
     /**
      * The active color of the pile, only applies when the color of the top
      * card is {@code CardColor.WILD}.
@@ -99,8 +99,8 @@ class DiscardPile {
      * @return cards that were removed
      */
     Collection<Card> clear() {
-        Collection<Card> oldCards = cardStack;
-        cardStack = new Stack<>();
+        Collection<Card> oldCards = new ArrayList<>(cardStack);
+        cardStack.clear();
         return oldCards;
     }
 
