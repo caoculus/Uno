@@ -4,16 +4,20 @@ package uno;
  * Enum for the color of a card.
  */
 enum CardColor {
-    BLUE, GREEN, RED, YELLOW, BLACK;
+    BLUE("Blue "),
+    GREEN("Green "),
+    RED("Red "),
+    YELLOW("Yellow "),
+    BLACK("");
+
+    private final String string;
+
+    CardColor(String string) {
+        this.string = string;
+    }
 
     @Override
     public String toString() {
-        return switch (this) {
-            case BLUE -> "Blue ";
-            case GREEN -> "Green ";
-            case RED -> "Red ";
-            case YELLOW -> "Yellow ";
-            case BLACK -> "";
-        };
+        return string;
     }
 }

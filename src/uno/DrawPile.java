@@ -8,22 +8,22 @@ import java.util.Stack;
  */
 class DrawPile {
     /**
-     * Stack representing the cards in the draw pile.
+     * Stack representing the cards in the pile.
      */
-    private final Stack<Card> cardList;
+    private final Stack<Card> cardStack;
 
     /**
      * Create a new draw pile.
      */
     DrawPile() {
-        cardList = new Stack<>();
+        cardStack = new Stack<>();
     }
 
     /**
      * @return true if the draw pile is empty, and false otherwise
      */
     boolean isEmpty() {
-        return cardList.isEmpty();
+        return cardStack.isEmpty();
     }
 
     /**
@@ -32,7 +32,7 @@ class DrawPile {
      * @param card card to add
      */
     void addCard(Card card) {
-        cardList.push(card);
+        cardStack.push(card);
     }
 
     /**
@@ -40,8 +40,8 @@ class DrawPile {
      *
      * @param addList list of cards to add
      */
-    void addCards(Stack<Card> addList) {
-        cardList.addAll(addList);
+    void addCardList(Stack<Card> addList) {
+        cardStack.addAll(addList);
     }
 
     /**
@@ -50,13 +50,13 @@ class DrawPile {
      * @return the drawn card
      */
     Card drawCard() {
-        return cardList.pop();
+        return cardStack.pop();
     }
 
     /**
      * Shuffle the cards in the draw pile.
      */
     void shuffle() {
-        Collections.shuffle(cardList);
+        Collections.shuffle(cardStack);
     }
 }
