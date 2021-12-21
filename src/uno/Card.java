@@ -14,13 +14,13 @@ record Card(CardColor color, CardType type, int id)
 
     @Override
     public int compareTo(@NotNull Card o) {
-        int diff1 = color.compareTo(o.color);
-        if (diff1 != 0) {
-            return diff1;
+        int colorDiff = color.compareTo(o.color);
+        if (colorDiff != 0) {
+            return colorDiff;
         }
-        int diff2 = type.compareTo(o.type);
-        if (diff2 != 0) {
-            return diff2;
+        int typeDiff = type.compareTo(o.type);
+        if (typeDiff != 0) {
+            return typeDiff;
         }
         return Integer.compare(id, o.id);
     }
