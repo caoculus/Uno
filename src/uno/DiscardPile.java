@@ -7,7 +7,7 @@ import java.util.Stack;
 /**
  * A discard pile.
  */
-public class DiscardPile {
+class DiscardPile {
     /*
      * Rep invariant:
      * - cardStack is not null and contains at least one Card.
@@ -26,30 +26,26 @@ public class DiscardPile {
 
     /**
      * Create a new discard pile.
-     *
-     * @param topCard first card on the top of the discard pile, not null
      */
-    DiscardPile(@NotNull Card topCard) {
+    DiscardPile() {
         cardStack = new Stack<>();
-        cardStack.push(topCard);
         activeColor = CardColor.WILD;
     }
 
     /**
+     * Check the top card of the discard pile.
+     *
      * @return the card on the top of the discard pile
+     * @throws java.util.EmptyStackException if the discard pile is empty
      */
     Card peek() {
         return cardStack.peek();
     }
 
     /**
-     * @param newColor the new active color of the pile, not null or {@code
-     *                 CardColor.WILD}
+     * @param newColor the new active color of the pile, not null
      */
     void setActiveColor(@NotNull CardColor newColor) {
-        if (newColor == CardColor.WILD) {
-            throw new IllegalArgumentException("New color cannot be wild.");
-        }
         activeColor = newColor;
     }
 
@@ -78,12 +74,11 @@ public class DiscardPile {
     }
 
     /**
-     * Play a card to the discard pile. The card should be checked using
-     * {@code isPlayable()} before calling this method.
+     * Add a card to the discard pile.
      *
-     * @param card the card to play, not null
+     * @param card the card to add, not null
      */
-    void playCard(@NotNull Card card) {
+    void addCard(@NotNull Card card) {
         cardStack.push(card);
     }
 }
