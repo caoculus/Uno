@@ -17,6 +17,18 @@ class DrawPile {
      */
     DrawPile() {
         cardStack = new Stack<>();
+        for (CardType type : CardType.values()) {
+            for (int i = 0; i < type.getFreq(); i++) {
+                if (type.isWild()) {
+                    cardStack.push(new Card(CardColor.WILD, type, i));
+                } else {
+                    cardStack.push(new Card(CardColor.BLUE, type, i));
+                    cardStack.push(new Card(CardColor.GREEN, type, i));
+                    cardStack.push(new Card(CardColor.RED, type, i));
+                    cardStack.push(new Card(CardColor.YELLOW, type, i));
+                }
+            }
+        }
     }
 
     /**
