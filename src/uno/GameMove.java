@@ -1,0 +1,16 @@
+package uno;
+
+enum GameMove {
+    NONE,
+    PLAY,
+    DRAW,
+    DRAW_TWO,
+    DRAW_TWO_CHALLENGE,
+    DRAW_FOUR,
+    DRAW_FOUR_CHALLENGE_FAIL,
+    DRAW_FOUR_CHALLENGE_SUCCESS,
+    SKIP,
+    REVERSE,
+    CHANGE_COLOR,
+    UNO
+}
