@@ -8,7 +8,7 @@ enum CardColor {
     GREEN("Green "),
     RED("Red "),
     YELLOW("Yellow "),
-    WILD("");
+    NONE("");
 
     private final String string;
 
