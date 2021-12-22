@@ -3,7 +3,6 @@ package uno;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 
@@ -17,101 +16,280 @@ class Game {
     private final DrawPile drawPile;
     private final DiscardPile discardPile;
     private final Hand[] hands;
-    private final Integer[] scoreBoard;
+    private final Scoreboard scoreboard;
+    private final List<Card> playableCards;
+    private final List<Card> lastDrawnCards;
 
     private GameState state;
+    private GameMove lastMove;
+    private Direction direction;
     private int activePlayer;
-    private int direction;
+    private int lastPlayer;
     private boolean isDrawFour;
-    private boolean canUno;
-    private boolean canChallenge;
+    private boolean isRoundOver;
+    private boolean canCallUno;
+    private boolean canChallengeUno;
 
     Game(int numPlayers) {
+        if (numPlayers < MIN_PLAYERS || numPlayers > MAX_PLAYERS) {
+            throw new IllegalArgumentException("Invalid number of players.");
+        }
         this.numPlayers = numPlayers;
         drawPile = new DrawPile();
         discardPile = new DiscardPile();
         hands = new Hand[numPlayers];
-        scoreBoard = new Integer[numPlayers];
+        scoreboard = new Scoreboard(numPlayers);
+        scoreboard.reset();
+        playableCards = new ArrayList<>();
+        lastDrawnCards = new ArrayList<>();
         state = GameState.ROUND_START;
     }
 
-    void startRound() {
+    boolean startRound() {
         if (state != GameState.ROUND_START) {
-            throw new IllegalStateException("State is not ROUND_START.");
+            return false;
         }
-        drawPile.shuffle();
-        dealCards();
-        Card topCard;
-        while ((topCard = drawPile.drawCard()).type()
-            == CardType.WILD_DRAW_FOUR) {
-            drawPile.addCard(topCard);
-            drawPile.shuffle();
-        }
-        discardPile.addCard(topCard);
+        resetFlags();
         activePlayer = RANDOM.nextInt(numPlayers);
-        direction = 1;
+        dealCards();
+        handleTopCard();
+        return true;
+    }
+
+    boolean playCard(int index) {
+        if (state != GameState.PLAY_CARD || index < 0
+            || index >= playableCards.size()) {
+            return false;
+        }
+        canChallengeUno = false;
+        Card card = playableCards.get(index);
+        Hand hand = hands[activePlayer];
+        hand.remove(card);
+        discardPile.add(card);
+        if (hand.isEmpty()) {
+            state = GameState.ROUND_OVER;
+        }
+        handleTopCard();
+        return true;
+    }
+
+    boolean drawCard() {
+        if (state != GameState.PLAY_CARD) {
+            return false;
+        }
+        canChallengeUno = false;
+        drawCards(activePlayer, 1);
+        if (!lastDrawnCards.isEmpty()) {
+            Card drawnCard = lastDrawnCards.get(0);
+            if (discardPile.isPlayable(drawnCard)) {
+                state = GameState.PLAY_DRAWN_CARD;
+            } else {
+                startTurn();
+            }
+        } else {
+            startTurn();
+        }
+        return true;
+    }
+
+    boolean playDrawnCard(boolean play) {
+        if (state != GameState.PLAY_DRAWN_CARD) {
+            return false;
+        }
+        if (play) {
+            Card drawnCard = lastDrawnCards.get(0);
+            Hand hand = hands[activePlayer];
+            hand.remove(drawnCard);
+            discardPile.add(drawnCard);
+            handleTopCard();
+        } else {
+            advancePlayer();
+            startTurn();
+        }
+        return true;
+    }
+
+    boolean callUno() {
+        if (state != GameState.PLAY_CARD || !canCallUno) {
+            return false;
+        }
+        lastMove = GameMove.UNO;
+        lastPlayer = activePlayer;
+        canCallUno = false;
+        return true;
+    }
+
+    boolean changeColor(@NotNull CardColor color) {
+        if (state != GameState.CHANGE_COLOR || color == CardColor.NONE) {
+            return false;
+        }
+        discardPile.setActiveColor(color);
+        lastMove = GameMove.CHANGE_COLOR;
+        advancePlayer();
+        if (isDrawFour) {
+            isDrawFour = false;
+            state = GameState.CHALLENGE_DRAW_FOUR;
+        } else {
+            startTurn();
+        }
+        return true;
+    }
+
+    boolean challengeDrawFour(boolean challenge) {
+        if (state != GameState.CHALLENGE_DRAW_FOUR) {
+            return false;
+        }
+        if (challenge) {
+            Hand lastHand = hands[lastPlayer];
+            CardColor activeColor = discardPile.getActiveColor();
+            if (lastHand.containsColor(activeColor)) {
+                // successful challenge
+                drawCards(lastPlayer, 4);
+                lastMove = GameMove.DRAW_FOUR_CHALLENGE_SUCCESS;
+            } else {
+                // failed challenge
+                drawCards(activePlayer, 6);
+                lastMove = GameMove.DRAW_FOUR_CHALLENGE_FAIL;
+                lastPlayer = activePlayer;
+            }
+        } else {
+            // no challenge
+            drawCards(activePlayer, 4);
+            lastMove = GameMove.DRAW_FOUR;
+            lastPlayer = activePlayer;
+        }
+        startTurn();
+        return true;
+    }
+
+    private void resetFlags() {
+        direction = Direction.CW;
+        lastMove = GameMove.NONE;
+        lastPlayer = -1;
         isDrawFour = false;
-        canUno = false;
-        canChallenge = false;
-        handleCard(discardPile.peek());
+        canCallUno = false;
+        canChallengeUno = false;
     }
 
     private void dealCards() {
         for (Hand hand : hands) {
-            drawCards(hand, INITIAL_HAND_SIZE);
-        }
-    }
-
-    private void handleCard(@NotNull Card card) {
-        switch (card.type()) {
-        case DRAW_TWO -> {
-            advancePlayer();
-            drawCards(hands[activePlayer], 2);
-            advancePlayer();
-            state = GameState.MOVE;
-        }
-        case REVERSE -> {
-            if (numPlayers > 2) {
-                direction = -direction;
-                advancePlayer();
+            for (int i = 0; i < INITIAL_HAND_SIZE; i++) {
+                hand.add(drawPile.drawCard());
             }
-            state = GameState.MOVE;
         }
-        case SKIP -> {
-            advancePlayer();
-            advancePlayer();
-            state = GameState.MOVE;
+        Card topCard;
+        while ((topCard = drawPile.drawCard()).type()
+            == CardType.WILD_DRAW_FOUR) {
+            drawPile.add(topCard);
         }
-        case WILD -> state = GameState.CHANGE_COLOR;
-        case WILD_DRAW_FOUR -> {
-            state = GameState.CHANGE_COLOR;
-            isDrawFour = true;
-        }
-        default -> advancePlayer();
+        discardPile.add(topCard);
+    }
+
+    private void handleTopCard() {
+        Card topCard = discardPile.peek();
+        if (topCard.type() == CardType.DRAW_TWO) {
+            drawTwo();
+            if (state != GameState.ROUND_OVER) {
+                startTurn();
+            }
+        } else {
+            switch (topCard.type()) {
+            case REVERSE -> {
+                if (numPlayers == MIN_PLAYERS) {
+                    skip();
+                } else {
+                    reverse();
+                }
+                startTurn();
+            }
+            case SKIP -> {
+                skip();
+                startTurn();
+            }
+            case WILD -> state = GameState.CHANGE_COLOR;
+            case WILD_DRAW_FOUR -> {
+                state = GameState.CHANGE_COLOR;
+                isDrawFour = true;
+            }
+            default -> {
+                advancePlayer();
+                startTurn();
+            }
+            }
         }
     }
 
-    private void drawCards(Hand hand, int numCards) {
+    private void drawTwo() {
+        advancePlayer();
+        drawCards(activePlayer, 2);
+        lastMove = GameMove.DRAW_TWO;
+        lastPlayer = activePlayer;
+        advancePlayer();
+    }
+
+    private void reverse() {
+        direction = direction.opposite();
+        lastMove = GameMove.REVERSE;
+        advancePlayer();
+    }
+
+    private void skip() {
+        advancePlayer();
+        lastMove = GameMove.SKIP;
+        lastPlayer = activePlayer;
+        advancePlayer();
+    }
+
+    private void startTurn() {
+        state = GameState.PLAY_CARD;
+        updatePlayableCards();
+        Hand hand = hands[activePlayer];
+        canCallUno = (hand.size() == 2) && !playableCards.isEmpty();
+    }
+
+    private void drawCards(int player, int numCards) {
+        lastDrawnCards.clear();
+        Hand hand = hands[player];
         for (int i = 0; i < numCards; i++) {
             if (drawPile.isEmpty() && !replenishDrawPile()) {
                 return;
             }
-            hand.addCard(drawPile.drawCard());
+            Card drawnCard = drawPile.drawCard();
+            hand.add(drawnCard);
+            lastDrawnCards.add(drawnCard);
         }
     }
 
     private boolean replenishDrawPile() {
-        Collection<Card> oldCards = discardPile.clearExceptTop();
+        List<Card> oldCards = discardPile.clearExceptTop();
         if (oldCards.isEmpty()) {
             return false;
         }
-        drawPile.addCards(oldCards);
-        drawPile.shuffle();
+        drawPile.add(oldCards);
         return true;
     }
 
     private void advancePlayer() {
-        activePlayer = (activePlayer + direction) % numPlayers;
+        int step = (direction == Direction.CW) ? 1 : -1;
+        activePlayer = Math.floorMod(activePlayer + step, numPlayers);
+    }
+
+    private void updatePlayableCards() {
+        playableCards.clear();
+        for (Card card : hands[activePlayer].getCards()) {
+            if (discardPile.isPlayable(card)) {
+                playableCards.add(card);
+            }
+        }
+    }
+
+    List<Card> getHand(int player) {
+        Hand hand = hands[player];
+        return hand.getCards();
+    }
+
+    Direction getDirection() {
+        return direction;
     }
 
     int getActivePlayer() {
@@ -119,12 +297,22 @@ class Game {
     }
 
     List<Card> getPlayableCards() {
-        List<Card> playableCards = new ArrayList<>();
-        for (Card card : hands[activePlayer].getCards()) {
-            if (discardPile.isPlayable(card)) {
-                playableCards.add(card);
-            }
-        }
-        return playableCards;
+        return new ArrayList<>(playableCards);
+    }
+
+    boolean canCallUno() {
+        return canCallUno;
+    }
+
+    boolean canChallengeUno() {
+        return canChallengeUno;
+    }
+
+    int getLastPlayer() {
+        return lastPlayer;
+    }
+
+    GameMove getLastMove() {
+        return lastMove;
     }
 }
