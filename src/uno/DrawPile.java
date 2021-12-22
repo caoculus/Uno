@@ -1,12 +1,8 @@
 package uno;
 
 import org.jetbrains.annotations.NotNull;
-import uno.card.Card;
-import uno.card.CardColor;
-import uno.card.CardType;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 
@@ -35,7 +31,7 @@ class DrawPile {
         for (CardType type : CardType.values()) {
             for (int i = 0; i < type.getFreq(); i++) {
                 if (type.isWild()) {
-                    cardList.add(new Card(CardColor.WILD, type, i));
+                    cardList.add(new Card(CardColor.NONE, type, i));
                 } else {
                     cardList.add(new Card(CardColor.BLUE, type, i));
                     cardList.add(new Card(CardColor.GREEN, type, i));
@@ -58,7 +54,7 @@ class DrawPile {
      *
      * @param card card to add, not null
      */
-    void addCard(@NotNull Card card) {
+    void add(@NotNull Card card) {
         cardList.add(card);
     }
 
@@ -68,7 +64,7 @@ class DrawPile {
      * @param cards list of cards to add, not null and not containing null
      *              elements
      */
-    void addCards(@NotNull List<Card> cards) {
+    void add(@NotNull List<Card> cards) {
         cardList.addAll(cards);
     }
 
