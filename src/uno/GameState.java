@@ -2,10 +2,10 @@ package uno;
 
 enum GameState {
     ROUND_START,
-    MOVE,
-    DRAW,
+    PLAY_CARD,
+    PLAY_DRAWN_CARD,
     CHANGE_COLOR,
-    CHALLENGE,
+    CHALLENGE_DRAW_FOUR,
     ROUND_OVER,
     GAME_OVER
 }
