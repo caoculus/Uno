@@ -9,26 +9,35 @@ import java.util.List;
 class Scoreboard {
     /*
      * Rep invariant:
-     * - scores is not null and contains only non-negative values
-     * - For each row in scores, the first two elements add to the third.
+     * - All arrays are not null.
+     * - numPlayers > 0.
      */
 
-    public final static int GOAL_SCORE = 500;
+    /**
+     * Score needed to win the game.
+     */
+    static final int GOAL_SCORE = 500;
 
     /**
-     * Number of players in this scoreboard.
+     * Number of players.
      */
     private final int numPlayers;
     /**
-     * Array for scores. Each row represents for a given player: the score in
-     * the previous round, the added score in the current round, and the
-     * score in the current round.
+     * Scores for previous round.
      */
-    private final int[][] scores;
+    private final Integer[] prevScores;
     /**
-     * Represents whether a player's score has reached {@code GOAL_SCORE}.
+     * Point contributions from each player for current round.
      */
-    private boolean isGameOver;
+    private final Integer[] addedScores;
+    /**
+     * Scores for current round.
+     */
+    private final Integer[] currScores;
+    /**
+     * Whether a player has reached {@code GOAL_SCORE}.
+     */
+    private boolean goalReached;
 
     /**
      * Create a new scoreboard.
@@ -36,44 +45,72 @@ class Scoreboard {
      * @param numPlayers number of players, positive
      */
     Scoreboard(int numPlayers) {
-        assert numPlayers > 0 : "Invalid number of players";
         this.numPlayers = numPlayers;
-        scores = new int[numPlayers][3];
-        isGameOver = false;
-    }
-
-    /**
-     * @return number of players for this scoreboard
-     */
-    int getNumPlayers() {
-        return numPlayers;
-    }
-
-    /**
-     * @return contents of the scoreboard. Each row represents for a given
-     * player: the score in the previous round, the added score in the
-     * current round, and the score in the current round.
-     */
-    List<int[]> getScores() {
-        return List.of(scores);
-    }
-
-    /**
-     * @return true if a player's score has reached {@code GOAL_SCORE} and
-     * false otherwise
-     */
-    boolean isGameOver() {
-        return isGameOver;
+        prevScores = new Integer[numPlayers];
+        addedScores = new Integer[numPlayers];
+        currScores = new Integer[numPlayers];
+        goalReached = false;
     }
 
     /**
      * Reset the scoreboard.
      */
     void reset() {
-        for (int[] row : scores) {
-            Arrays.fill(row, 0);
-        }
-        isGameOver = false;
+        Arrays.fill(prevScores, 0);
+        Arrays.fill(addedScores, 0);
+        Arrays.fill(currScores, 0);
     }
 
+    /**
+     * Update the scoreboard.
+     *
+     * @param winner index of the player receiving the points
+     * @param loser  index of the player giving the points
+     * @param score  number of points
+     */
+    void addScore(int winner, int loser, int score) {
+        addedScores[loser] += score;
+        currScores[winner] += score;
+        if (currScores[winner] >= GOAL_SCORE) {
+            goalReached = true;
+        }
+    }
+
+    /**
+     * Copies the current round scores to the previous round and clears the
+     * point contributions for the current round.
+     */
+    void newRound() {
+        System.arraycopy(currScores, 0, prevScores, 0, numPlayers);
+        Arrays.fill(addedScores, 0);
+    }
+
+    /**
+     * @return list of scores for the previous round
+     */
+    List<Integer> getPrevScores() {
+        return List.of(prevScores);
+    }
+
+    /**
+     * @return list of point contributions for the current round
+     */
+    List<Integer> getAddedScores() {
+        return List.of(addedScores);
+    }
+
+    /**
+     * @return list of scores for the current round
+     */
+    List<Integer> getCurrScores() {
+        return List.of(currScores);
+    }
+
+    /**
+     * @return true if a player has reached {@code GOAL_SCORE}, and false
+     * otherwise
+     */
+    boolean isGoalReached() {
+        return goalReached;
+    }
 }
