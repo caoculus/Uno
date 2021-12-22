@@ -2,33 +2,42 @@ package uno;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Stack;
+import java.util.List;
+import java.util.Random;
 
 /**
  * A draw pile.
  */
 class DrawPile {
-    /**
-     * Stack representing the cards in the pile.
+    /*
+     * Rep invariant:
+     * - cardList is not null and does not contain null elements.
      */
-    private final Stack<Card> cardStack;
+    /**
+     * Random number generator for drawing cards.
+     */
+    private static final Random RANDOM = new Random();
+    /**
+     * List representing the cards in the pile.
+     */
+    private final List<Card> cardList;
 
     /**
      * Create a new draw pile.
      */
     DrawPile() {
-        cardStack = new Stack<>();
+        cardList = new ArrayList<>();
         for (CardType type : CardType.values()) {
             for (int i = 0; i < type.getFreq(); i++) {
                 if (type.isWild()) {
-                    cardStack.push(new Card(CardColor.WILD, type, i));
+                    cardList.add(new Card(CardColor.WILD, type, i));
                 } else {
-                    cardStack.push(new Card(CardColor.BLUE, type, i));
-                    cardStack.push(new Card(CardColor.GREEN, type, i));
-                    cardStack.push(new Card(CardColor.RED, type, i));
-                    cardStack.push(new Card(CardColor.YELLOW, type, i));
+                    cardList.add(new Card(CardColor.BLUE, type, i));
+                    cardList.add(new Card(CardColor.GREEN, type, i));
+                    cardList.add(new Card(CardColor.RED, type, i));
+                    cardList.add(new Card(CardColor.YELLOW, type, i));
                 }
             }
         }
@@ -38,7 +47,7 @@ class DrawPile {
      * @return true if the draw pile is empty, and false otherwise
      */
     boolean isEmpty() {
-        return cardStack.isEmpty();
+        return cardList.isEmpty();
     }
 
     /**
@@ -47,7 +56,7 @@ class DrawPile {
      * @param card card to add, not null
      */
     void addCard(@NotNull Card card) {
-        cardStack.push(card);
+        cardList.add(card);
     }
 
     /**
@@ -56,22 +65,21 @@ class DrawPile {
      * @param cards cards to add, not null
      */
     void addCards(@NotNull Collection<Card> cards) {
-        cardStack.addAll(cards);
+        cardList.addAll(cards);
     }
 
     /**
-     * Draw a card from the pile, requires that the pile is not empty.
+     * Draw a random card from the pile, requires that the pile is not empty.
      *
      * @return the drawn card
      */
     Card drawCard() {
-        return cardStack.pop();
-    }
-
-    /**
-     * Shuffle the cards in the draw pile.
-     */
-    void shuffle() {
-        Collections.shuffle(cardStack);
+        int index = RANDOM.nextInt(cardList.size());
+        Card selected = cardList.get(index);
+        if (index < cardList.size() - 1) {
+            Card last = cardList.remove(cardList.size() - 1);
+            cardList.set(index, last);
+        }
+        return selected;
     }
 }
