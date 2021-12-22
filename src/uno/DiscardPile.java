@@ -1,9 +1,12 @@
 package uno;
 
 import org.jetbrains.annotations.NotNull;
+import uno.card.Card;
+import uno.card.CardColor;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Stack;
 
 /**
@@ -90,8 +93,8 @@ class DiscardPile {
      *
      * @return cards that were removed
      */
-    Collection<Card> clear() {
-        Collection<Card> oldCards = new ArrayList<>(cardStack);
+    List<Card> clear() {
+        List<Card> oldCards = new ArrayList<>(cardStack);
         cardStack.clear();
         return oldCards;
     }
@@ -102,9 +105,9 @@ class DiscardPile {
      *
      * @return cards that were removed
      */
-    Collection<Card> clearExceptTop() {
+    List<Card> clearExceptTop() {
         Card topCard = cardStack.pop();
-        Collection<Card> oldCards = clear();
+        List<Card> oldCards = clear();
         cardStack.push(topCard);
         return oldCards;
     }

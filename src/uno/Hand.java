@@ -1,10 +1,13 @@
 package uno;
 
 import org.jetbrains.annotations.NotNull;
+import uno.card.Card;
+import uno.card.CardColor;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -30,28 +33,45 @@ public class Hand {
     }
 
     /**
-     * @return cards in the player hand, in sorted order
+     * @return list of cards in the player hand, in sorted order
      */
-    Collection<Card> getCards() {
-        return Collections.unmodifiableSet(cardSet);
+    List<Card> getCards() {
+        return new ArrayList<>(cardSet);
     }
 
     /**
-     * Add a card to the player hand if it is not present.
+     * Add a card to the player hand.
      *
      * @param card card to add, not null
+     * @throws IllegalStateException if hand already contained {@code card}
      */
     void addCard(@NotNull Card card) {
-        cardSet.add(card);
+        if (!cardSet.add(card)) {
+            throw new IllegalStateException("Hand already contains card.");
+        }
     }
 
     /**
-     * Remove a card from the player hand if it is present.
+     * Add a list of cards to the player hand.
+     *
+     * @param cards list of cards to add, not null and not containing null
+     *              elements
+     */
+    void addCards(@NotNull List<Card> cards) {
+        cardSet.addAll(cards);
+    }
+
+    /**
+     * Remove a card from the player hand.
      *
      * @param card card to remove, not null
+     * @throws IllegalStateException if the player hand did not contain
+     *                               {@code card}
      */
     void removeCard(@NotNull Card card) {
-        cardSet.remove(card);
+        if (cardSet.remove(card)) {
+            throw new IllegalStateException("Hand did not contain card.");
+        }
     }
 
     /**
@@ -90,5 +110,12 @@ public class Hand {
             value += card.type().getValue();
         }
         return value;
+    }
+
+    /**
+     * @return the number of cards in this hand
+     */
+    int size() {
+        return cardSet.size();
     }
 }

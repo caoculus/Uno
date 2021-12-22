@@ -1,5 +1,6 @@
 package uno;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -89,21 +90,21 @@ class Scoreboard {
      * @return list of scores for the previous round
      */
     List<Integer> getPrevScores() {
-        return List.of(prevScores);
+        return new ArrayList<>(List.of(prevScores));
     }
 
     /**
      * @return list of point contributions for the current round
      */
     List<Integer> getAddedScores() {
-        return List.of(addedScores);
+        return new ArrayList<>(List.of(addedScores));
     }
 
     /**
      * @return list of scores for the current round
      */
     List<Integer> getCurrScores() {
-        return List.of(currScores);
+        return new ArrayList<>(List.of(currScores));
     }
 
     /**
