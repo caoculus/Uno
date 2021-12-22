@@ -50,7 +50,7 @@ class Scoreboard {
         prevScores = new Integer[numPlayers];
         addedScores = new Integer[numPlayers];
         currScores = new Integer[numPlayers];
-        goalReached = false;
+        reset();
     }
 
     /**
@@ -60,6 +60,7 @@ class Scoreboard {
         Arrays.fill(prevScores, 0);
         Arrays.fill(addedScores, 0);
         Arrays.fill(currScores, 0);
+        goalReached = false;
     }
 
     /**
