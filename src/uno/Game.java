@@ -1,5 +1,7 @@
 package uno;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -20,8 +22,9 @@ class Game {
     private GameState state;
     private int activePlayer;
     private int direction;
-    private List<Card> playableCards;
-
+    private boolean isDrawFour;
+    private boolean canUno;
+    private boolean canChallenge;
 
     Game(int numPlayers) {
         this.numPlayers = numPlayers;
@@ -45,6 +48,12 @@ class Game {
             drawPile.shuffle();
         }
         discardPile.addCard(topCard);
+        activePlayer = RANDOM.nextInt(numPlayers);
+        direction = 1;
+        isDrawFour = false;
+        canUno = false;
+        canChallenge = false;
+        handleCard(discardPile.peek());
     }
 
     private void dealCards() {
@@ -53,17 +62,32 @@ class Game {
         }
     }
 
-    private void handleTopCard() {
-        activePlayer = RANDOM.nextInt(numPlayers);
-        direction = 1;
-        state = GameState.MOVE;
-        switch (discardPile.peek().type()) {
+    private void handleCard(@NotNull Card card) {
+        switch (card.type()) {
         case DRAW_TWO -> {
+            advancePlayer();
             drawCards(hands[activePlayer], 2);
             advancePlayer();
+            state = GameState.MOVE;
         }
-        case REVERSE -> direction = -direction;
+        case REVERSE -> {
+            if (numPlayers > 2) {
+                direction = -direction;
+                advancePlayer();
+            }
+            state = GameState.MOVE;
+        }
+        case SKIP -> {
+            advancePlayer();
+            advancePlayer();
+            state = GameState.MOVE;
+        }
         case WILD -> state = GameState.CHANGE_COLOR;
+        case WILD_DRAW_FOUR -> {
+            state = GameState.CHANGE_COLOR;
+            isDrawFour = true;
+        }
+        default -> advancePlayer();
         }
     }
 
