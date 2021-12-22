@@ -1,12 +1,9 @@
 package uno;
 
 import org.jetbrains.annotations.NotNull;
-import uno.card.Card;
-import uno.card.CardColor;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -43,9 +40,9 @@ public class Hand {
      * Add a card to the player hand.
      *
      * @param card card to add, not null
-     * @throws IllegalStateException if hand already contained {@code card}
+     * @throws IllegalStateException if the hand already contained {@code card}
      */
-    void addCard(@NotNull Card card) {
+    void add(@NotNull Card card) {
         if (!cardSet.add(card)) {
             throw new IllegalStateException("Hand already contains card.");
         }
@@ -56,9 +53,11 @@ public class Hand {
      *
      * @param cards list of cards to add, not null and not containing null
      *              elements
+     * @throws IllegalStateException if the hand already contained any card in
+     *                               {@code cards}
      */
-    void addCards(@NotNull List<Card> cards) {
-        cardSet.addAll(cards);
+    void add(@NotNull List<Card> cards) {
+        cards.forEach(this::add);
     }
 
     /**
@@ -68,7 +67,7 @@ public class Hand {
      * @throws IllegalStateException if the player hand did not contain
      *                               {@code card}
      */
-    void removeCard(@NotNull Card card) {
+    void remove(@NotNull Card card) {
         if (cardSet.remove(card)) {
             throw new IllegalStateException("Hand did not contain card.");
         }
@@ -117,5 +116,12 @@ public class Hand {
      */
     int size() {
         return cardSet.size();
+    }
+
+    /**
+     * @return true if this hand is empty, and false otherwise
+     */
+    boolean isEmpty() {
+        return cardSet.size() == 0;
     }
 }
