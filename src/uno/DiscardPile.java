@@ -1,11 +1,8 @@
 package uno;
 
 import org.jetbrains.annotations.NotNull;
-import uno.card.Card;
-import uno.card.CardColor;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Stack;
 
@@ -25,7 +22,7 @@ class DiscardPile {
     private final Stack<Card> cardStack;
     /**
      * The active color of the pile, only applies when the color of the top
-     * card is {@code CardColor.WILD}.
+     * card is {@code CardColor.NONE}.
      */
     private CardColor activeColor;
 
@@ -34,7 +31,7 @@ class DiscardPile {
      */
     DiscardPile() {
         cardStack = new Stack<>();
-        activeColor = CardColor.WILD;
+        activeColor = CardColor.NONE;
     }
 
     /**
@@ -45,6 +42,13 @@ class DiscardPile {
      */
     Card peek() {
         return cardStack.peek();
+    }
+
+    /**
+     * @return the active color of the pile
+     */
+    CardColor getActiveColor() {
+        return activeColor;
     }
 
     /**
@@ -64,9 +68,9 @@ class DiscardPile {
     boolean isPlayable(@NotNull Card card) {
         Card topCard = cardStack.peek();
         boolean playable = false;
-        if (card.color() == CardColor.WILD) {
+        if (card.color() == CardColor.NONE) {
             playable = true;
-        } else if (topCard.color() == CardColor.WILD) {
+        } else if (topCard.color() == CardColor.NONE) {
             if (card.color() == activeColor) {
                 playable = true;
             }
@@ -84,7 +88,7 @@ class DiscardPile {
      *
      * @param card the card to add, not null
      */
-    void addCard(@NotNull Card card) {
+    void add(@NotNull Card card) {
         cardStack.push(card);
     }
 
