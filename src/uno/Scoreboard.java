@@ -28,7 +28,11 @@ class Scoreboard {
      */
     private final Integer[] prevScores;
     /**
-     * Point contributions from each player for current round.
+     * Point contributions from each player in the current round.
+     */
+    private final Integer[] contribScores;
+    /**
+     * Points added to winning player in the current round.
      */
     private final Integer[] addedScores;
     /**
@@ -48,6 +52,7 @@ class Scoreboard {
     Scoreboard(int numPlayers) {
         this.numPlayers = numPlayers;
         prevScores = new Integer[numPlayers];
+        contribScores = new Integer[numPlayers];
         addedScores = new Integer[numPlayers];
         currScores = new Integer[numPlayers];
         reset();
@@ -58,6 +63,7 @@ class Scoreboard {
      */
     void reset() {
         Arrays.fill(prevScores, 0);
+        Arrays.fill(contribScores, 0);
         Arrays.fill(addedScores, 0);
         Arrays.fill(currScores, 0);
         goalReached = false;
@@ -71,7 +77,8 @@ class Scoreboard {
      * @param score  number of points
      */
     void addScore(int winner, int loser, int score) {
-        addedScores[loser] += score;
+        contribScores[loser] += score;
+        addedScores[winner] += score;
         currScores[winner] += score;
         if (currScores[winner] >= GOAL_SCORE) {
             goalReached = true;
@@ -84,28 +91,23 @@ class Scoreboard {
      */
     void newRound() {
         System.arraycopy(currScores, 0, prevScores, 0, numPlayers);
+        Arrays.fill(contribScores, 0);
         Arrays.fill(addedScores, 0);
     }
 
     /**
-     * @return list of scores for the previous round
+     * @return contents of the scoreboard. The four entries of the list
+     * represent: (1) scores for the previous round, (2) contributed points
+     * for the current round, (3) added points for the current round, and (4)
+     * scores for the current round.
      */
-    List<Integer> getPrevScores() {
-        return new ArrayList<>(List.of(prevScores));
-    }
-
-    /**
-     * @return list of point contributions for the current round
-     */
-    List<Integer> getAddedScores() {
-        return new ArrayList<>(List.of(addedScores));
-    }
-
-    /**
-     * @return list of scores for the current round
-     */
-    List<Integer> getCurrScores() {
-        return new ArrayList<>(List.of(currScores));
+    List<List<Integer>> getScores() {
+        List<List<Integer>> scores = new ArrayList<>();
+        scores.add(new ArrayList<>(List.of(prevScores)));
+        scores.add(new ArrayList<>(List.of(contribScores)));
+        scores.add(new ArrayList<>(List.of(addedScores)));
+        scores.add(new ArrayList<>(List.of(currScores)));
+        return scores;
     }
 
     /**
