@@ -3,6 +3,7 @@ package uno;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -24,9 +25,9 @@ class Game {
     private GameMove lastMove;
     private Direction direction;
     private int activePlayer;
-    private int lastPlayer;
+    private int lastPlayed;
+    private int lastAttacked;
     private boolean isDrawFour;
-    private boolean isRoundOver;
     private boolean canCallUno;
     private boolean canChallengeUno;
 
@@ -38,6 +39,7 @@ class Game {
         drawPile = new DrawPile();
         discardPile = new DiscardPile();
         hands = new Hand[numPlayers];
+        Arrays.fill(hands, new Hand());
         scoreboard = new Scoreboard(numPlayers);
         scoreboard.reset();
         playableCards = new ArrayList<>();
@@ -62,12 +64,17 @@ class Game {
             return false;
         }
         canChallengeUno = false;
+        lastPlayed = activePlayer;
+        lastMove = GameMove.PLAY_CARD;
         Card card = playableCards.get(index);
         Hand hand = hands[activePlayer];
         hand.remove(card);
         discardPile.add(card);
         if (hand.isEmpty()) {
             state = GameState.ROUND_OVER;
+        }
+        if (canCallUno) {
+            canChallengeUno = true;
         }
         handleTopCard();
         return true;
@@ -78,15 +85,14 @@ class Game {
             return false;
         }
         canChallengeUno = false;
+        lastPlayed = activePlayer;
+        lastMove = GameMove.DRAW_CARD;
         drawCards(activePlayer, 1);
-        if (!lastDrawnCards.isEmpty()) {
-            Card drawnCard = lastDrawnCards.get(0);
-            if (discardPile.isPlayable(drawnCard)) {
-                state = GameState.PLAY_DRAWN_CARD;
-            } else {
-                startTurn();
-            }
+        if (!lastDrawnCards.isEmpty() && discardPile.isPlayable(
+            lastDrawnCards.get(0))) {
+            state = GameState.PLAY_DRAWN_CARD;
         } else {
+            advancePlayer();
             startTurn();
         }
         return true;
@@ -97,6 +103,7 @@ class Game {
             return false;
         }
         if (play) {
+            lastMove = GameMove.PLAY_CARD;
             Card drawnCard = lastDrawnCards.get(0);
             Hand hand = hands[activePlayer];
             hand.remove(drawnCard);
@@ -113,9 +120,29 @@ class Game {
         if (state != GameState.PLAY_CARD || !canCallUno) {
             return false;
         }
-        lastMove = GameMove.UNO;
-        lastPlayer = activePlayer;
+        lastMove = GameMove.CALL_UNO;
+        lastPlayed = activePlayer;
         canCallUno = false;
+        return true;
+    }
+
+    boolean callLateUno() {
+        if (state != GameState.PLAY_CARD || !canChallengeUno) {
+            return false;
+        }
+        lastMove = GameMove.CALL_UNO;
+        canChallengeUno = false;
+        return true;
+    }
+
+    boolean challengeUno() {
+        if (state != GameState.PLAY_CARD || !canChallengeUno) {
+            return false;
+        }
+        drawCards(lastPlayed, 2);
+        lastMove = GameMove.CHALLENGE_UNO;
+        lastAttacked = lastPlayed;
+        lastPlayed = activePlayer;
         return true;
     }
 
@@ -139,33 +166,91 @@ class Game {
         if (state != GameState.CHALLENGE_DRAW_FOUR) {
             return false;
         }
+        lastAttacked = activePlayer;
         if (challenge) {
-            Hand lastHand = hands[lastPlayer];
+            Hand lastHand = hands[lastPlayed];
             CardColor activeColor = discardPile.getActiveColor();
             if (lastHand.containsColor(activeColor)) {
                 // successful challenge
-                drawCards(lastPlayer, 4);
+                drawCards(lastPlayed, 4);
                 lastMove = GameMove.DRAW_FOUR_CHALLENGE_SUCCESS;
             } else {
                 // failed challenge
                 drawCards(activePlayer, 6);
                 lastMove = GameMove.DRAW_FOUR_CHALLENGE_FAIL;
-                lastPlayer = activePlayer;
             }
         } else {
             // no challenge
             drawCards(activePlayer, 4);
             lastMove = GameMove.DRAW_FOUR;
-            lastPlayer = activePlayer;
         }
         startTurn();
         return true;
     }
 
+    boolean resetRound() {
+        if (state != GameState.ROUND_OVER) {
+            return false;
+        }
+        collectCards();
+        return true;
+    }
+
+    boolean resetGame() {
+        if (state != GameState.GAME_OVER) {
+            return false;
+        }
+        scoreboard.reset();
+        collectCards();
+        return true;
+    }
+
+    List<Card> getHand(int player) {
+        Hand hand = hands[player];
+        return hand.getCards();
+    }
+
+    Direction getDirection() {
+        return direction;
+    }
+
+    int getActivePlayer() {
+        return activePlayer;
+    }
+
+    List<Card> getPlayableCards() {
+        return new ArrayList<>(playableCards);
+    }
+
+    Card getTopCard() {
+        return discardPile.peek();
+    }
+
+    boolean canCallUno() {
+        return canCallUno;
+    }
+
+    boolean canChallengeUno() {
+        return canChallengeUno;
+    }
+
+    int getLastPlayed() {
+        return lastPlayed;
+    }
+
+    int getLastAttacked() {
+        return lastAttacked;
+    }
+
+    GameMove getLastMove() {
+        return lastMove;
+    }
+
     private void resetFlags() {
         direction = Direction.CW;
         lastMove = GameMove.NONE;
-        lastPlayer = -1;
+        lastPlayed = -1;
+        lastAttacked = -1;
         isDrawFour = false;
         canCallUno = false;
         canChallengeUno = false;
@@ -192,7 +277,7 @@ class Game {
             if (state != GameState.ROUND_OVER) {
                 startTurn();
             }
-        } else {
+        } else if (state != GameState.ROUND_OVER) {
             switch (topCard.type()) {
             case REVERSE -> {
                 if (numPlayers == MIN_PLAYERS) {
@@ -217,13 +302,16 @@ class Game {
             }
             }
         }
+        if (state == GameState.ROUND_OVER) {
+            updateScores();
+        }
     }
 
     private void drawTwo() {
         advancePlayer();
-        drawCards(activePlayer, 2);
         lastMove = GameMove.DRAW_TWO;
-        lastPlayer = activePlayer;
+        drawCards(activePlayer, 2);
+        lastAttacked = activePlayer;
         advancePlayer();
     }
 
@@ -236,12 +324,13 @@ class Game {
     private void skip() {
         advancePlayer();
         lastMove = GameMove.SKIP;
-        lastPlayer = activePlayer;
+        lastAttacked = activePlayer;
         advancePlayer();
     }
 
     private void startTurn() {
         state = GameState.PLAY_CARD;
+        lastPlayed = activePlayer;
         updatePlayableCards();
         Hand hand = hands[activePlayer];
         canCallUno = (hand.size() == 2) && !playableCards.isEmpty();
@@ -283,36 +372,23 @@ class Game {
         }
     }
 
-    List<Card> getHand(int player) {
-        Hand hand = hands[player];
-        return hand.getCards();
+    private void updateScores() {
+        for (int i = 0; i < numPlayers; i++) {
+            if (i != lastPlayed) {
+                int score = hands[i].getHandValue();
+                scoreboard.addScore(lastPlayed, i, score);
+            }
+        }
+        if (scoreboard.isGoalReached()) {
+            state = GameState.GAME_OVER;
+        }
     }
 
-    Direction getDirection() {
-        return direction;
-    }
-
-    int getActivePlayer() {
-        return activePlayer;
-    }
-
-    List<Card> getPlayableCards() {
-        return new ArrayList<>(playableCards);
-    }
-
-    boolean canCallUno() {
-        return canCallUno;
-    }
-
-    boolean canChallengeUno() {
-        return canChallengeUno;
-    }
-
-    int getLastPlayer() {
-        return lastPlayer;
-    }
-
-    GameMove getLastMove() {
-        return lastMove;
+    private void collectCards() {
+        drawPile.add(discardPile.clear());
+        for (Hand hand : hands) {
+            drawPile.add(hand.clear());
+        }
+        state = GameState.ROUND_START;
     }
 }
