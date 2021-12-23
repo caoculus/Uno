@@ -207,6 +207,10 @@ class Game {
         return true;
     }
 
+    int getNumPlayers() {
+        return numPlayers;
+    }
+
     GameState getState() {
         return state;
     }
@@ -254,6 +258,14 @@ class Game {
 
     boolean isGameOver() {
         return scoreboard.isGoalReached();
+    }
+
+    List<Card> getLastDrawnCards() {
+        return new ArrayList<>(lastDrawnCards);
+    }
+
+    CardColor getActiveColor() {
+        return discardPile.getActiveColor();
     }
 
     private void resetFlags() {
