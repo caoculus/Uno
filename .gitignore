@@ -1,3 +1,8 @@
 /.idea/
 /Uno.iml
 /out/
+/gradlew
+/gradlew.bat
+/gradle/
+/.gradle/
+/build/
