@@ -3,7 +3,6 @@ package uno;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -68,7 +67,7 @@ public class Hand {
      *                               {@code card}
      */
     void remove(@NotNull Card card) {
-        if (cardSet.remove(card)) {
+        if (!cardSet.remove(card)) {
             throw new IllegalStateException("Hand did not contain card.");
         }
     }
