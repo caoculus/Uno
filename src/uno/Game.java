@@ -39,7 +39,9 @@ class Game {
         drawPile = new DrawPile();
         discardPile = new DiscardPile();
         hands = new Hand[numPlayers];
-        Arrays.fill(hands, new Hand());
+        for (int i = 0; i < numPlayers; i++) {
+            hands[i] = new Hand();
+        }
         scoreboard = new Scoreboard(numPlayers);
         scoreboard.reset();
         playableCards = new ArrayList<>();
@@ -330,7 +332,6 @@ class Game {
 
     private void startTurn() {
         state = GameState.PLAY_CARD;
-        lastPlayed = activePlayer;
         updatePlayableCards();
         Hand hand = hands[activePlayer];
         canCallUno = (hand.size() == 2) && !playableCards.isEmpty();
