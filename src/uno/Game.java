@@ -7,9 +7,10 @@ import java.util.List;
 import java.util.Random;
 
 class Game {
-    private static final int INITIAL_HAND_SIZE = 7;
-    private static final int MIN_PLAYERS = 2;
-    private static final int MAX_PLAYERS = 10;
+    static final int INITIAL_HAND_SIZE = 7;
+    static final int MIN_PLAYERS = 2;
+    static final int MAX_PLAYERS = 10;
+
     private static final Random RANDOM = new Random();
 
     private final int numPlayers;
@@ -199,6 +200,7 @@ class Game {
         if (state != GameState.ROUND_OVER) {
             return false;
         }
+        scoreboard.newRound();
         collectCards();
         return true;
     }
@@ -271,6 +273,10 @@ class Game {
 
     CardColor getActiveColor() {
         return discardPile.getActiveColor();
+    }
+
+    List<List<Integer>> getScores() {
+        return scoreboard.getScores();
     }
 
     private void resetFlags() {
