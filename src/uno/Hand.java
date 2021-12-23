@@ -78,8 +78,8 @@ public class Hand {
      *
      * @return cards that were removed
      */
-    Collection<Card> clear() {
-        Collection<Card> oldCards = new ArrayList<>(cardSet);
+    List<Card> clear() {
+        List<Card> oldCards = new ArrayList<>(cardSet);
         cardSet.clear();
         return oldCards;
     }
@@ -123,5 +123,10 @@ public class Hand {
      */
     boolean isEmpty() {
         return cardSet.size() == 0;
+    }
+
+    @Override
+    public String toString() {
+        return cardSet.toString();
     }
 }
