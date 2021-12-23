@@ -79,6 +79,8 @@ class DrawPile {
         if (index < cardList.size() - 1) {
             Card last = cardList.remove(cardList.size() - 1);
             cardList.set(index, last);
+        } else {
+            cardList.remove(cardList.size() - 1);
         }
         return selected;
     }
