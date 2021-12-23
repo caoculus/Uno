@@ -18,6 +18,8 @@ public class Main {
                 printMoves(game);
                 handleInput(game, reader);
             }
+            printGame(game);
+            System.out.println(game.getScores());
         }
     }
 
@@ -152,12 +154,18 @@ public class Main {
             }
             case PLAY_DRAWN_CARD -> {
                 switch (input) {
+                case "u" -> {
+                    if (game.canCallUno()) {
+                        game.callUno();
+                    } else {
+                        done = false;
+                    }
+                }
                 case "n" -> game.playDrawnCard(false);
                 case "y" -> game.playDrawnCard(true);
                 default -> done = false;
                 }
-            }
-            case CHANGE_COLOR -> {
+            } case CHANGE_COLOR -> {
                 switch (input) {
                 case "b" -> game.changeColor(CardColor.BLUE);
                 case "g" -> game.changeColor(CardColor.GREEN);
