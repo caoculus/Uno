@@ -281,7 +281,7 @@ class Game {
 
     private void resetFlags() {
         direction = Direction.CW;
-        lastMove = GameMove.NONE;
+        lastMove = GameMove.PLAY_CARD;
         lastPlayed = -1;
         lastAttacked = -1;
         isDrawFour = false;
