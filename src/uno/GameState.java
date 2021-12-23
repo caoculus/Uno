@@ -6,6 +6,5 @@ enum GameState {
     PLAY_DRAWN_CARD,
     CHANGE_COLOR,
     CHALLENGE_DRAW_FOUR,
-    ROUND_OVER,
-    GAME_OVER
+    ROUND_OVER
 }

@@ -3,7 +3,6 @@ package uno;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -65,7 +64,7 @@ class Game {
             || index >= playableCards.size()) {
             return false;
         }
-        canChallengeUno = false;
+        canChallengeUno = canCallUno;
         lastPlayed = activePlayer;
         lastMove = GameMove.PLAY_CARD;
         Card card = playableCards.get(index);
@@ -74,11 +73,10 @@ class Game {
         discardPile.add(card);
         if (hand.isEmpty()) {
             state = GameState.ROUND_OVER;
+            handleRoundOver();
+        } else {
+            handleTopCard();
         }
-        if (canCallUno) {
-            canChallengeUno = true;
-        }
-        handleTopCard();
         return true;
     }
 
@@ -199,12 +197,16 @@ class Game {
     }
 
     boolean resetGame() {
-        if (state != GameState.GAME_OVER) {
+        if (state != GameState.ROUND_OVER) {
             return false;
         }
         scoreboard.reset();
         collectCards();
         return true;
+    }
+
+    GameState getState() {
+        return state;
     }
 
     List<Card> getHand(int player) {
@@ -248,6 +250,10 @@ class Game {
         return lastMove;
     }
 
+    boolean isGameOver() {
+        return scoreboard.isGoalReached();
+    }
+
     private void resetFlags() {
         direction = Direction.CW;
         lastMove = GameMove.NONE;
@@ -274,39 +280,41 @@ class Game {
 
     private void handleTopCard() {
         Card topCard = discardPile.peek();
+        switch (topCard.type()) {
+        case DRAW_TWO -> {
+            drawTwo();
+            startTurn();
+        }
+        case REVERSE -> {
+            if (numPlayers == MIN_PLAYERS) {
+                skip();
+            } else {
+                reverse();
+            }
+            startTurn();
+        }
+        case SKIP -> {
+            skip();
+            startTurn();
+        }
+        case WILD -> state = GameState.CHANGE_COLOR;
+        case WILD_DRAW_FOUR -> {
+            state = GameState.CHANGE_COLOR;
+            isDrawFour = true;
+        }
+        default -> {
+            advancePlayer();
+            startTurn();
+        }
+        }
+    }
+
+    private void handleRoundOver() {
+        Card topCard = discardPile.peek();
         if (topCard.type() == CardType.DRAW_TWO) {
             drawTwo();
-            if (state != GameState.ROUND_OVER) {
-                startTurn();
-            }
-        } else if (state != GameState.ROUND_OVER) {
-            switch (topCard.type()) {
-            case REVERSE -> {
-                if (numPlayers == MIN_PLAYERS) {
-                    skip();
-                } else {
-                    reverse();
-                }
-                startTurn();
-            }
-            case SKIP -> {
-                skip();
-                startTurn();
-            }
-            case WILD -> state = GameState.CHANGE_COLOR;
-            case WILD_DRAW_FOUR -> {
-                state = GameState.CHANGE_COLOR;
-                isDrawFour = true;
-            }
-            default -> {
-                advancePlayer();
-                startTurn();
-            }
-            }
         }
-        if (state == GameState.ROUND_OVER) {
-            updateScores();
-        }
+        updateScores();
     }
 
     private void drawTwo() {
@@ -379,9 +387,6 @@ class Game {
                 int score = hands[i].getHandValue();
                 scoreboard.addScore(lastPlayed, i, score);
             }
-        }
-        if (scoreboard.isGoalReached()) {
-            state = GameState.GAME_OVER;
         }
     }
 
