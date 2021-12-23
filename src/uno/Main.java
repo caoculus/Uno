@@ -40,8 +40,12 @@ public class Main {
                 System.out.println("l to call late Uno.");
             }
         }
-        case PLAY_DRAWN_CARD -> System.out.println(
-            "Play " + lastDrawnCards.get(0) + "? (y/n)");
+        case PLAY_DRAWN_CARD -> {
+            System.out.println("Play " + lastDrawnCards.get(0) + "? (y/n)");
+            if (game.canCallUno()) {
+                System.out.println("u to call Uno.");
+            }
+        }
         case CHANGE_COLOR -> System.out.println("Change color: b/g/r/y");
         case CHALLENGE_DRAW_FOUR -> System.out.println(
             "Player " + activePlayer + " : challenge draw four? (y/n)");
@@ -136,7 +140,7 @@ public class Main {
                 }
                 default -> {
                     try {
-                        int choice = Integer.parseInt(input);
+                        int choice = Integer.parseInt(input) - 1;
                         if (!game.playCard(choice)) {
                             done = false;
                         }

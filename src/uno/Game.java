@@ -90,6 +90,9 @@ class Game {
         drawCards(activePlayer, 1);
         if (!lastDrawnCards.isEmpty() && discardPile.isPlayable(
             lastDrawnCards.get(0))) {
+            // check if we need to call Uno again
+            Hand hand = hands[activePlayer];
+            canCallUno = (hand.size() == 2);
             state = GameState.PLAY_DRAWN_CARD;
         } else {
             advancePlayer();
@@ -103,6 +106,7 @@ class Game {
             return false;
         }
         if (play) {
+            canChallengeUno = canCallUno;
             lastMove = GameMove.PLAY_CARD;
             Card drawnCard = lastDrawnCards.get(0);
             Hand hand = hands[activePlayer];
@@ -117,7 +121,8 @@ class Game {
     }
 
     boolean callUno() {
-        if (state != GameState.PLAY_CARD || !canCallUno) {
+        if (!(state == GameState.PLAY_CARD
+            || state == GameState.PLAY_DRAWN_CARD) || !canCallUno) {
             return false;
         }
         lastMove = GameMove.CALL_UNO;
