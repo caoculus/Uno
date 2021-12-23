@@ -178,11 +178,13 @@ class Game {
                 // failed challenge
                 drawCards(activePlayer, 6);
                 lastMove = GameMove.DRAW_FOUR_CHALLENGE_FAIL;
+                advancePlayer();
             }
         } else {
             // no challenge
             drawCards(activePlayer, 4);
             lastMove = GameMove.DRAW_FOUR;
+            advancePlayer();
         }
         startTurn();
         return true;
@@ -313,6 +315,9 @@ class Game {
         Card topCard = discardPile.peek();
         if (topCard.type() == CardType.DRAW_TWO) {
             drawTwo();
+        } else if (topCard.type() == CardType.WILD_DRAW_FOUR) {
+            advancePlayer();
+            drawCards(activePlayer, 4);
         }
         updateScores();
     }
