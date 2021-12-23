@@ -4,10 +4,10 @@ package uno;
  * Enum for the color of a card.
  */
 enum CardColor {
-    BLUE("Blue "),
-    GREEN("Green "),
-    RED("Red "),
-    YELLOW("Yellow "),
+    BLUE("Blue"),
+    GREEN("Green"),
+    RED("Red"),
+    YELLOW("Yellow"),
     NONE("");
 
     private final String string;

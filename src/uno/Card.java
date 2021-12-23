@@ -9,7 +9,11 @@ record Card(CardColor color, CardType type, int id)
     implements Comparable<Card> {
     @Override
     public @NotNull String toString() {
-        return color.toString() + type.toString();
+        if (color == CardColor.NONE) {
+            return type.toString();
+        } else {
+            return color.toString() + " " + type.toString();
+        }
     }
 
     @Override
