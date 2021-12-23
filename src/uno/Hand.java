@@ -48,18 +48,6 @@ public class Hand {
     }
 
     /**
-     * Add a list of cards to the player hand.
-     *
-     * @param cards list of cards to add, not null and not containing null
-     *              elements
-     * @throws IllegalStateException if the hand already contained any card in
-     *                               {@code cards}
-     */
-    void add(@NotNull List<Card> cards) {
-        cards.forEach(this::add);
-    }
-
-    /**
      * Remove a card from the player hand.
      *
      * @param card card to remove, not null
