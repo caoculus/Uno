@@ -1,6 +1,7 @@
 package uno;
 
 enum GameState {
+    DEAL_CARDS,
     ROUND_START,
     PLAY_CARD,
     PLAY_DRAWN_CARD,

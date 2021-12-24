@@ -46,16 +46,33 @@ class Game {
         scoreboard.reset();
         playableCards = new ArrayList<>();
         lastDrawnCards = new ArrayList<>();
-        state = GameState.ROUND_START;
+        state = GameState.DEAL_CARDS;
+    }
+
+    boolean dealCards() {
+        if (state != GameState.DEAL_CARDS) {
+            return false;
+        }
+        resetFlags();
+        activePlayer = RANDOM.nextInt(numPlayers);
+        for (Hand hand : hands) {
+            for (int i = 0; i < INITIAL_HAND_SIZE; i++) {
+                hand.add(drawPile.drawCard());
+            }
+        }
+        return true;
     }
 
     boolean startRound() {
         if (state != GameState.ROUND_START) {
             return false;
         }
-        resetFlags();
-        activePlayer = RANDOM.nextInt(numPlayers);
-        dealCards();
+        Card topCard;
+        while ((topCard = drawPile.drawCard()).type()
+            == CardType.WILD_DRAW_FOUR) {
+            drawPile.add(topCard);
+        }
+        discardPile.add(topCard);
         handleTopCard();
         return true;
     }
@@ -226,6 +243,14 @@ class Game {
         return hands[player].getCards();
     }
 
+    List<List<Card>> getHands() {
+        List<List<Card>> hands = new ArrayList<>();
+        for (int i = 0; i < numPlayers; i++) {
+            hands.add(getHand(i));
+        }
+        return hands;
+    }
+
     Direction getDirection() {
         return direction;
     }
@@ -286,20 +311,6 @@ class Game {
         isDrawFour = false;
         canCallUno = false;
         canChallengeUno = false;
-    }
-
-    private void dealCards() {
-        for (Hand hand : hands) {
-            for (int i = 0; i < INITIAL_HAND_SIZE; i++) {
-                hand.add(drawPile.drawCard());
-            }
-        }
-        Card topCard;
-        while ((topCard = drawPile.drawCard()).type()
-            == CardType.WILD_DRAW_FOUR) {
-            drawPile.add(topCard);
-        }
-        discardPile.add(topCard);
     }
 
     private void handleTopCard() {
@@ -422,6 +433,6 @@ class Game {
         for (Hand hand : hands) {
             drawPile.add(hand.clear());
         }
-        state = GameState.ROUND_START;
+        state = GameState.DEAL_CARDS;
     }
 }
