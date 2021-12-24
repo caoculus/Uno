@@ -89,8 +89,8 @@ class Game {
         lastPlayed = activePlayer;
         lastMove = GameMove.DRAW_CARD;
         drawCards(activePlayer, 1);
-        if (!lastDrawnCards.isEmpty() && lastDrawnCards.get(0)
-            .isPlayable(discardPile.peek(), discardPile.getActiveColor())) {
+        if (!lastDrawnCards.isEmpty() && discardPile.isPlayable(
+            lastDrawnCards.get(0))) {
             // check if we need to call Uno again
             Hand hand = hands[activePlayer];
             canCallUno = (hand.size() == 2);
@@ -156,7 +156,7 @@ class Game {
         if (state != GameState.CHANGE_COLOR || color == CardColor.NONE) {
             return false;
         }
-        discardPile.setActiveColor(color);
+        discardPile.setWildColor(color);
         lastMove = GameMove.CHANGE_COLOR;
         advancePlayer();
         if (isDrawFour) {
@@ -175,7 +175,7 @@ class Game {
         lastAttacked = activePlayer;
         if (challenge) {
             Hand lastHand = hands[lastPlayed];
-            CardColor activeColor = discardPile.getActiveColor();
+            CardColor activeColor = discardPile.getWildColor();
             if (lastHand.containsColor(activeColor)) {
                 // successful challenge
                 drawCards(lastPlayed, 4);
@@ -271,7 +271,7 @@ class Game {
     }
 
     CardColor getActiveColor() {
-        return discardPile.getActiveColor();
+        return discardPile.getWildColor();
     }
 
     List<List<Integer>> getScores() {
@@ -402,8 +402,7 @@ class Game {
     private void updatePlayableCards() {
         playableCards.clear();
         for (Card card : hands[activePlayer].getCards()) {
-            if (card.isPlayable(discardPile.peek(),
-                discardPile.getActiveColor())) {
+            if (discardPile.isPlayable(card)) {
                 playableCards.add(card);
             }
         }

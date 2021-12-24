@@ -84,4 +84,15 @@ class DiscardPile {
         cardStack.push(topCard);
         return oldCards;
     }
+
+
+    /**
+     * Check if a card is playable on the discard pile.
+     *
+     * @param card card to check
+     * @return true if the card is playable and false otherwise
+     */
+    boolean isPlayable(@NotNull Card card) {
+        return card.isPlayable(cardStack.peek(), wildColor);
+    }
 }
