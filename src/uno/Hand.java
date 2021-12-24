@@ -61,6 +61,16 @@ public class Hand {
     }
 
     /**
+     * Check if the player hand contains a specified card.
+     *
+     * @param card card to check for
+     * @return true if the hand contains the card, and false otherwise
+     */
+    boolean contains(Card card) {
+        return cardSet.contains(card);
+    }
+
+    /**
      * Clear all cards from the hand.
      *
      * @return cards that were removed

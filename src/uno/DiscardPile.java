@@ -1,5 +1,7 @@
 package uno;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
@@ -91,8 +93,7 @@ class DiscardPile {
         if (state != GameState.PLAY_CARD) {
             throw new IllegalStateException("Not in PLAY_CARD state!");
         }
-        if (!card.isPlayable(cardStack.peek(),
-            wildColor)) {
+        if (!isPlayable(card)) {
             return false;
         }
         cardStack.push(card);
@@ -125,6 +126,16 @@ class DiscardPile {
         List<Card> oldCards = clear();
         cardStack.push(topCard);
         return oldCards;
+    }
+
+    /**
+     * Check if a card is playable on the discard pile.
+     *
+     * @param card card to check
+     * @return true if the card is playable and false otherwise
+     */
+    boolean isPlayable(@NotNull Card card) {
+        return card.isPlayable(cardStack.peek(), wildColor);
     }
 
     /**
