@@ -10,28 +10,22 @@ import java.util.Stack;
  * A discard pile.
  */
 class DiscardPile {
-    /*
-     * Rep invariant:
-     * - cardStack is not null and contains at least one Card.
-     * - activeColor is not null.
-     */
-
     /**
      * Stack representing the cards in the pile.
      */
     private final Stack<Card> cardStack;
     /**
-     * The active color of the pile, only applies when the color of the top
+     * The wild color of the pile, only applies when the color of the top
      * card is {@code CardColor.NONE}.
      */
-    private CardColor activeColor;
+    private CardColor wildColor;
 
     /**
      * Create a new discard pile.
      */
     DiscardPile() {
         cardStack = new Stack<>();
-        activeColor = CardColor.NONE;
+        wildColor = CardColor.NONE;
     }
 
     /**
@@ -47,15 +41,15 @@ class DiscardPile {
     /**
      * @return the active color of the pile
      */
-    CardColor getActiveColor() {
-        return activeColor;
+    CardColor getWildColor() {
+        return wildColor;
     }
 
     /**
-     * @param newColor the new active color of the pile, not null
+     * @param wildColor the new wild color of the pile, not null
      */
-    void setActiveColor(@NotNull CardColor newColor) {
-        activeColor = newColor;
+    void setWildColor(@NotNull CardColor wildColor) {
+        this.wildColor = wildColor;
     }
 
     /**
