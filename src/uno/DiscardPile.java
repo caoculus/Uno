@@ -50,15 +50,16 @@ class DiscardPile {
 
     /**
      * @param wildColor the new wild color of the pile, not null or {@code
-     * CardColor.NONE}.
+     *                  CardColor.NONE}.
+     * @throws IllegalStateException if the state is not {@code GameState
+     *                               .CHANGE_COLOR}
      */
-    boolean setWildColor(CardColor wildColor) {
-        if (state != GameState.CHANGE_COLOR || wildColor == CardColor.NONE) {
-            return false;
+    void setWildColor(CardColor wildColor) {
+        if (state != GameState.CHANGE_COLOR) {
+            throw new IllegalStateException("Not in CHANGE_COLOR state!");
         }
         this.wildColor = wildColor;
         state = GameState.PLAY_CARD;
-        return true;
     }
 
     /**
@@ -66,10 +67,12 @@ class DiscardPile {
      *
      * @param card the card to add, not null
      * @return true if the card was successfully added, and false otherwise
+     * @throws IllegalStateException if the state is not ({@code GameState
+     *                               .ROUND_START}
      */
     boolean addFirst(Card card) {
         if (state != GameState.ROUND_START) {
-            return false;
+            throw new IllegalStateException("Not in ROUND_START state!");
         }
         cardStack.push(card);
         state = GameState.PLAY_CARD;
@@ -81,9 +84,14 @@ class DiscardPile {
      *
      * @param card the card to add, not null
      * @return true if the card was successfully played, and false otherwise
+     * @throws IllegalStateException if the state is not {@code GameState
+     * .PLAY_CARD}
      */
     boolean add(Card card) {
-        if (state != GameState.PLAY_CARD || !card.isPlayable(cardStack.peek(),
+        if (state != GameState.PLAY_CARD) {
+            throw new IllegalStateException("Not in PLAY_CARD state!");
+        }
+        if (!card.isPlayable(cardStack.peek(),
             wildColor)) {
             return false;
         }
