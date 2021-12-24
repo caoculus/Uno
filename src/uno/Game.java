@@ -89,8 +89,8 @@ class Game {
         lastPlayed = activePlayer;
         lastMove = GameMove.DRAW_CARD;
         drawCards(activePlayer, 1);
-        if (!lastDrawnCards.isEmpty() && discardPile.isPlayable(
-            lastDrawnCards.get(0))) {
+        if (!lastDrawnCards.isEmpty() && lastDrawnCards.get(0)
+            .isPlayable(discardPile.peek(), discardPile.getActiveColor())) {
             // check if we need to call Uno again
             Hand hand = hands[activePlayer];
             canCallUno = (hand.size() == 2);
@@ -402,7 +402,8 @@ class Game {
     private void updatePlayableCards() {
         playableCards.clear();
         for (Card card : hands[activePlayer].getCards()) {
-            if (discardPile.isPlayable(card)) {
+            if (card.isPlayable(discardPile.peek(),
+                discardPile.getActiveColor())) {
                 playableCards.add(card);
             }
         }

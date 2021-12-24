@@ -28,4 +28,27 @@ record Card(CardColor color, CardType type, int id)
         }
         return Integer.compare(id, o.id);
     }
+
+    /**
+     * Check if this card is playable for a given top card and active color.
+     *
+     * @param topCard the top card of the discard pile
+     * @param activeColor the active color of the discard pile
+     * @return true if this card is playable and false otherwise
+     */
+    boolean isPlayable(Card topCard, CardColor activeColor) {
+        boolean playable = false;
+        if (color == CardColor.NONE) {
+            playable = true;
+        } else if (topCard.color() == CardColor.NONE) {
+            if (color == activeColor) {
+                playable = true;
+            }
+        } else {
+            if (color == topCard.color() || type == topCard.type()) {
+                playable = true;
+            }
+        }
+        return playable;
+    }
 }

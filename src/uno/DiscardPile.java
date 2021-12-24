@@ -59,31 +59,6 @@ class DiscardPile {
     }
 
     /**
-     * Check if a card is playable to the discard pile, requires that the
-     * discard pile is not empty.
-     *
-     * @param card the card to check, not null
-     * @return true if the card is playable and false otherwise
-     */
-    boolean isPlayable(@NotNull Card card) {
-        Card topCard = cardStack.peek();
-        boolean playable = false;
-        if (card.color() == CardColor.NONE) {
-            playable = true;
-        } else if (topCard.color() == CardColor.NONE) {
-            if (card.color() == activeColor) {
-                playable = true;
-            }
-        } else {
-            if (card.color() == topCard.color()
-                || card.type() == topCard.type()) {
-                playable = true;
-            }
-        }
-        return playable;
-    }
-
-    /**
      * Add a card to the discard pile.
      *
      * @param card the card to add, not null
