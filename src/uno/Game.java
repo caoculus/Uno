@@ -223,8 +223,7 @@ class Game {
     }
 
     List<Card> getHand(int player) {
-        Hand hand = hands[player];
-        return hand.getCards();
+        return hands[player].getCards();
     }
 
     Direction getDirection() {
