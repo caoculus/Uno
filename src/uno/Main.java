@@ -8,19 +8,30 @@ import java.util.Locale;
 
 public class Main {
     public static void main(String[] args) throws IOException {
-        int numPlayers = 4;
-        Game game = new Game(numPlayers);
-        BufferedReader reader =
-            new BufferedReader(new InputStreamReader(System.in));
-        while (!game.isGameOver()) {
-            game.startRound();
-            while (game.getState() != GameState.ROUND_OVER) {
-                printMoves(game);
-                handleInput(game, reader);
-            }
-            printGame(game);
-            System.out.println(game.getScores());
-        }
+        String host = "localhost";
+        int port = 9000;
+        int numPlayers = 2;
+        UnoServer server = new UnoServer(port, numPlayers);
+        UnoClient client1 = new UnoClient(host, port, "1");
+        UnoClient client2 = new UnoClient(host, port, "2");
+        Thread t1 = new Thread(server::start);
+        Thread t2 = new Thread(client1::start);
+        Thread t3 = new Thread(client2::start);
+        t1.start();
+        t2.start();
+        t3.start();
+//        Game game = new Game(numPlayers);
+//        BufferedReader reader =
+//            new BufferedReader(new InputStreamReader(System.in));
+//        while (!game.isGameOver()) {
+//            game.startRound();
+//            while (game.getState() != GameState.ROUND_OVER) {
+//                printMoves(game);
+//                handleInput(game, reader);
+//            }
+//            printGame(game);
+//            System.out.println(game.getScores());
+//        }
     }
 
     private static void printMoves(Game game) {
