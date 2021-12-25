@@ -1,8 +1,6 @@
 package uno;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 
@@ -59,6 +57,7 @@ public class UnoServer {
             waitForConnections();
             sendIds();
             nameHandshake();
+            awaitConfirmation();
             gameLoop();
             executor.shutdown();
         } catch (IOException | InterruptedException e) {
@@ -120,17 +119,15 @@ public class UnoServer {
 
     private void gameLoop() throws InterruptedException {
         while (!game.isGameOver()) {
-            game.dealCards();
-            sendStartCards();
             game.startRound();
-            sendRoundStart();
-            while (!(game.getState() == GameState.ROUND_OVER)) {
-                switch (game.getState()) {
-                case PLAY_CARD -> {
-                    sendPlayCard();
-                }
-                }
+            while (game.getState() != GameState.ROUND_OVER) {
+                sendGameData();
+                awaitConfirmation();
+                sendStart();
+                awaitMove();
             }
+            sendGameData();
+            awaitConfirmation();
         }
     }
 
@@ -146,50 +143,25 @@ public class UnoServer {
         }
     }
 
-    private void sendStartCards() throws InterruptedException {
-        for (int i = 0; i < numPlayers; i++) {
-            PrintWriter writer = writers.get(i);
-            Card[] cards = game.getHand(i);
-            JsonObject cardJson = new JsonObject();
-            cardJson.add("type", new JsonPrimitive("dealCards"));
-            cardJson.add("cardArray", GSON.toJsonTree(cards));
-            writer.println(cardJson);
+    private void sendGameData() {
+        JsonObject gameJson = new JsonObject();
+        gameJson.add("type", new JsonPrimitive("game"));
+        gameJson.add("gameData",
+            new JsonPrimitive(GSON.toJson(new GameData(game))));
+        for (PrintWriter writer : writers) {
+            writer.println(gameJson);
         }
-        awaitConfirmation();
     }
 
-    private void sendRoundStart() throws InterruptedException {
-        Card topCard = game.getTopCard();
+    private void sendStart() {
         JsonObject startJson = new JsonObject();
-        startJson.add("type", new JsonPrimitive("roundStart"));
-        startJson.add("topCard", new JsonPrimitive(GSON.toJson(topCard)));
-        switch (topCard.type()) {
-        case REVERSE -> {
-            Direction direction = game.getDirection();
-            startJson.add("direction",
-                new JsonPrimitive(GSON.toJson(direction)));
-        }
-        case SKIP -> {
-            int skipped = game.getLastAttacked();
-            startJson.add("skipped", new JsonPrimitive(skipped));
-        }
-        case DRAW_TWO -> {
-            Card[] drawnCards = game.getLastDrawnCards();
-            int drew = game.getLastAttacked();
-            startJson.add("drew", new JsonPrimitive(drew));
-            startJson.add("drawnCards", GSON.toJsonTree(drawnCards));
-        }
-        }
+        startJson.add("type", new JsonPrimitive("start"));
         for (PrintWriter writer : writers) {
             writer.println(startJson);
         }
-        awaitConfirmation();
     }
 
-    private void sendPlayCard() {
-        int activePlayer = game.getActivePlayer();
-        JsonObject playCardJson = new JsonObject();
+    private void awaitMove() {
 
     }
-
 }
