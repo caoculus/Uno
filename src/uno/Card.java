@@ -2,11 +2,29 @@ package uno;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Objects;
+
 /**
  * An Uno card.
  */
-record Card(CardColor color, CardType type, int id)
-    implements Comparable<Card> {
+class Card implements Comparable<Card> {
+    private final CardColor color;
+    private final CardType type;
+    private final int id;
+
+    /**
+     * Create a new card.
+     *
+     * @param color color of the card
+     * @param type type of the card
+     * @param id id to differentiate between identical cards
+     */
+    Card(CardColor color, CardType type, int id) {
+        this.color = color;
+        this.type = type;
+        this.id = id;
+    }
+
     @Override
     public @NotNull String toString() {
         if (color == CardColor.NONE) {
@@ -51,4 +69,27 @@ record Card(CardColor color, CardType type, int id)
         }
         return playable;
     }
+
+    public CardColor color() {
+        return color;
+    }
+
+    public CardType type() {
+        return type;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) return true;
+        if (obj == null || obj.getClass() != this.getClass()) return false;
+        var that = (Card) obj;
+        return Objects.equals(this.color, that.color) && Objects.equals(
+            this.type, that.type) && this.id == that.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(color, type, id);
+    }
+
 }

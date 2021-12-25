@@ -18,21 +18,23 @@ class Game {
     private final DiscardPile discardPile;
     private final Hand[] hands;
     private final Scoreboard scoreboard;
-    private final PlayerCounter counter;
+    private final List<Card> playableCards;
     private final List<Card> lastDrawnCards;
 
     private GameState state;
     private GameMove lastMove;
+    private Direction direction;
+    private int activePlayer;
+    private int lastPlayed;
+    private int lastAttacked;
     private boolean isDrawFour;
     private boolean canCallUno;
     private boolean canChallengeUno;
 
-    /**
-     * Create a new Uno game.
-     *
-     * @param numPlayers number of players, between 2 and 10 inclusive
-     */
     Game(int numPlayers) {
+        if (numPlayers < MIN_PLAYERS || numPlayers > MAX_PLAYERS) {
+            throw new IllegalArgumentException("Invalid number of players.");
+        }
         this.numPlayers = numPlayers;
         drawPile = new DrawPile();
         discardPile = new DiscardPile();
@@ -41,32 +43,50 @@ class Game {
             hands[i] = new Hand();
         }
         scoreboard = new Scoreboard(numPlayers);
-        counter = new PlayerCounter(numPlayers);
+        scoreboard.reset();
+        playableCards = new ArrayList<>();
         lastDrawnCards = new ArrayList<>();
-        state = GameState.ROUND_START;
+        state = GameState.DEAL_CARDS;
+    }
+
+    boolean dealCards() {
+        if (state != GameState.DEAL_CARDS) {
+            return false;
+        }
+        resetFlags();
+        activePlayer = RANDOM.nextInt(numPlayers);
+        for (Hand hand : hands) {
+            for (int i = 0; i < INITIAL_HAND_SIZE; i++) {
+                hand.add(drawPile.drawCard());
+            }
+        }
+        return true;
     }
 
     boolean startRound() {
         if (state != GameState.ROUND_START) {
             return false;
         }
-        resetFlags();
-        counter.reset(RANDOM.nextInt(numPlayers));
-        dealCards();
+        Card topCard;
+        while ((topCard = drawPile.drawCard()).type()
+            == CardType.WILD_DRAW_FOUR) {
+            drawPile.add(topCard);
+        }
+        discardPile.add(topCard);
         handleTopCard();
         return true;
     }
 
-    boolean playCard(Card card) {
-        if (state != GameState.PLAY_CARD) {
-            return false;
-        }
-        Hand hand = hands[getActivePlayer()];
-        if (!hand.contains(card) || discardPile.isPlayable(card)) {
+    boolean playCard(int index) {
+        if (state != GameState.PLAY_CARD || index < 0
+            || index >= playableCards.size()) {
             return false;
         }
         canChallengeUno = canCallUno;
+        lastPlayed = activePlayer;
         lastMove = GameMove.PLAY_CARD;
+        Card card = playableCards.get(index);
+        Hand hand = hands[activePlayer];
         hand.remove(card);
         discardPile.add(card);
         if (hand.isEmpty()) {
@@ -82,8 +102,8 @@ class Game {
         if (state != GameState.PLAY_CARD) {
             return false;
         }
-        int activePlayer = getActivePlayer();
         canChallengeUno = false;
+        lastPlayed = activePlayer;
         lastMove = GameMove.DRAW_CARD;
         drawCards(activePlayer, 1);
         if (!lastDrawnCards.isEmpty() && discardPile.isPlayable(
@@ -93,7 +113,7 @@ class Game {
             canCallUno = (hand.size() == 2);
             state = GameState.PLAY_DRAWN_CARD;
         } else {
-            counter.advancePlayer(1);
+            advancePlayer();
             startTurn();
         }
         return true;
@@ -103,7 +123,6 @@ class Game {
         if (state != GameState.PLAY_DRAWN_CARD) {
             return false;
         }
-        int activePlayer = getActivePlayer();
         if (play) {
             canChallengeUno = canCallUno;
             lastMove = GameMove.PLAY_CARD;
@@ -113,7 +132,7 @@ class Game {
             discardPile.add(drawnCard);
             handleTopCard();
         } else {
-            counter.advancePlayer(1);
+            advancePlayer();
             startTurn();
         }
         return true;
@@ -125,6 +144,7 @@ class Game {
             return false;
         }
         lastMove = GameMove.CALL_UNO;
+        lastPlayed = activePlayer;
         canCallUno = false;
         return true;
     }
@@ -142,9 +162,10 @@ class Game {
         if (state != GameState.PLAY_CARD || !canChallengeUno) {
             return false;
         }
-        int lastPlayed = counter.getNextPlayer(-1);
         drawCards(lastPlayed, 2);
         lastMove = GameMove.CHALLENGE_UNO;
+        lastAttacked = lastPlayed;
+        lastPlayed = activePlayer;
         return true;
     }
 
@@ -154,7 +175,7 @@ class Game {
         }
         discardPile.setWildColor(color);
         lastMove = GameMove.CHANGE_COLOR;
-        counter.advancePlayer(1);
+        advancePlayer();
         if (isDrawFour) {
             isDrawFour = false;
             state = GameState.CHALLENGE_DRAW_FOUR;
@@ -168,8 +189,7 @@ class Game {
         if (state != GameState.CHALLENGE_DRAW_FOUR) {
             return false;
         }
-        int lastPlayed = counter.getNextPlayer(-1);
-        int activePlayer = getActivePlayer();
+        lastAttacked = activePlayer;
         if (challenge) {
             Hand lastHand = hands[lastPlayed];
             CardColor activeColor = discardPile.getWildColor();
@@ -181,13 +201,13 @@ class Game {
                 // failed challenge
                 drawCards(activePlayer, 6);
                 lastMove = GameMove.DRAW_FOUR_CHALLENGE_FAIL;
-                counter.advancePlayer(1);
+                advancePlayer();
             }
         } else {
             // no challenge
             drawCards(activePlayer, 4);
             lastMove = GameMove.DRAW_FOUR;
-            counter.advancePlayer(1);
+            advancePlayer();
         }
         startTurn();
         return true;
@@ -219,16 +239,20 @@ class Game {
         return state;
     }
 
-    List<Card> getHand(int player) {
-        return hands[player].getCards();
+    Card[] getHand(int player) {
+        return hands[player].getCards().toArray(new Card[0]);
     }
 
     Direction getDirection() {
-        return counter.getDirection();
+        return direction;
     }
 
     int getActivePlayer() {
-        return counter.getActivePlayer();
+        return activePlayer;
+    }
+
+    Card[] getPlayableCards() {
+        return playableCards.toArray(new Card[0]);
     }
 
     Card getTopCard() {
@@ -243,6 +267,14 @@ class Game {
         return canChallengeUno;
     }
 
+    int getLastPlayed() {
+        return lastPlayed;
+    }
+
+    int getLastAttacked() {
+        return lastAttacked;
+    }
+
     GameMove getLastMove() {
         return lastMove;
     }
@@ -251,8 +283,8 @@ class Game {
         return scoreboard.isGoalReached();
     }
 
-    List<Card> getLastDrawnCards() {
-        return new ArrayList<>(lastDrawnCards);
+    Card[] getLastDrawnCards() {
+        return lastDrawnCards.toArray(new Card[0]);
     }
 
     CardColor getActiveColor() {
@@ -264,24 +296,13 @@ class Game {
     }
 
     private void resetFlags() {
-        lastMove = GameMove.NONE;
+        direction = Direction.CW;
+        lastMove = GameMove.PLAY_CARD;
+        lastPlayed = -1;
+        lastAttacked = -1;
         isDrawFour = false;
         canCallUno = false;
         canChallengeUno = false;
-    }
-
-    private void dealCards() {
-        for (Hand hand : hands) {
-            for (int i = 0; i < INITIAL_HAND_SIZE; i++) {
-                hand.add(drawPile.drawCard());
-            }
-        }
-        Card topCard;
-        while ((topCard = drawPile.drawCard()).type()
-            == CardType.WILD_DRAW_FOUR) {
-            drawPile.add(topCard);
-        }
-        discardPile.addFirst(topCard);
     }
 
     private void handleTopCard() {
@@ -309,7 +330,7 @@ class Game {
             isDrawFour = true;
         }
         default -> {
-            counter.advancePlayer(1);
+            advancePlayer();
             startTurn();
         }
         }
@@ -320,51 +341,38 @@ class Game {
         if (topCard.type() == CardType.DRAW_TWO) {
             drawTwo();
         } else if (topCard.type() == CardType.WILD_DRAW_FOUR) {
-            int nextPlayer = counter.getNextPlayer(1);
-            drawCards(nextPlayer, 4);
+            advancePlayer();
+            drawCards(activePlayer, 4);
         }
         updateScores();
     }
 
     private void drawTwo() {
+        advancePlayer();
         lastMove = GameMove.DRAW_TWO;
-        int nextPlayer = counter.getNextPlayer(1);
-        drawCards(nextPlayer, 2);
-        counter.advancePlayer(2);
+        drawCards(activePlayer, 2);
+        lastAttacked = activePlayer;
+        advancePlayer();
     }
 
     private void reverse() {
+        direction = direction.opposite();
         lastMove = GameMove.REVERSE;
-        counter.switchDirection();
+        advancePlayer();
     }
 
     private void skip() {
+        advancePlayer();
         lastMove = GameMove.SKIP;
-        counter.advancePlayer(2);
+        lastAttacked = activePlayer;
+        advancePlayer();
     }
 
     private void startTurn() {
-        int activePlayer = getActivePlayer();
         state = GameState.PLAY_CARD;
+        updatePlayableCards();
         Hand hand = hands[activePlayer];
-        updateCanCallUno();
-    }
-
-    private void updateCanCallUno() {
-        int activePlayer = getActivePlayer();
-        Hand hand = hands[activePlayer];
-        canCallUno = true;
-        if (hand.size() != 2) {
-            canCallUno = false;
-        } else {
-            Card topCard = discardPile.peek();
-            CardColor wildColor = discardPile.getWildColor();
-            for (Card card : hand.getCards()) {
-                if (!card.isPlayable(topCard, wildColor)) {
-                    canCallUno = false;
-                }
-            }
-        }
+        canCallUno = (hand.size() == 2) && !playableCards.isEmpty();
     }
 
     private void drawCards(int player, int numCards) {
@@ -389,12 +397,25 @@ class Game {
         return true;
     }
 
+    private void advancePlayer() {
+        int step = (direction == Direction.CW) ? 1 : -1;
+        activePlayer = Math.floorMod(activePlayer + step, numPlayers);
+    }
+
+    private void updatePlayableCards() {
+        playableCards.clear();
+        for (Card card : hands[activePlayer].getCards()) {
+            if (discardPile.isPlayable(card)) {
+                playableCards.add(card);
+            }
+        }
+    }
+
     private void updateScores() {
-        int activePlayer = getActivePlayer();
         for (int i = 0; i < numPlayers; i++) {
-            if (i != activePlayer) {
+            if (i != lastPlayed) {
                 int score = hands[i].getHandValue();
-                scoreboard.addScore(activePlayer, i, score);
+                scoreboard.addScore(lastPlayed, i, score);
             }
         }
     }
@@ -404,6 +425,6 @@ class Game {
         for (Hand hand : hands) {
             drawPile.add(hand.clear());
         }
-        state = GameState.ROUND_START;
+        state = GameState.DEAL_CARDS;
     }
 }
