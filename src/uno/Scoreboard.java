@@ -1,8 +1,6 @@
 package uno;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 /**
  * Scoreboard for an Uno game.
@@ -26,19 +24,19 @@ class Scoreboard {
     /**
      * Scores for previous round.
      */
-    private final Integer[] prevScores;
+    private final int[] prevScores;
     /**
      * Point contributions from each player in the current round.
      */
-    private final Integer[] contribScores;
+    private final int[] contribScores;
     /**
      * Points added to winning player in the current round.
      */
-    private final Integer[] addedScores;
+    private final int[] addedScores;
     /**
      * Scores for current round.
      */
-    private final Integer[] currScores;
+    private final int[] currScores;
     /**
      * Whether a player has reached {@code GOAL_SCORE}.
      */
@@ -51,11 +49,11 @@ class Scoreboard {
      */
     Scoreboard(int numPlayers) {
         this.numPlayers = numPlayers;
-        prevScores = new Integer[numPlayers];
-        contribScores = new Integer[numPlayers];
-        addedScores = new Integer[numPlayers];
-        currScores = new Integer[numPlayers];
-        reset();
+        prevScores = new int[numPlayers];
+        contribScores = new int[numPlayers];
+        addedScores = new int[numPlayers];
+        currScores = new int[numPlayers];
+        goalReached = false;
     }
 
     /**
@@ -101,12 +99,14 @@ class Scoreboard {
      * for the current round, (3) added points for the current round, and (4)
      * scores for the current round.
      */
-    List<List<Integer>> getScores() {
-        List<List<Integer>> scores = new ArrayList<>();
-        scores.add(new ArrayList<>(List.of(prevScores)));
-        scores.add(new ArrayList<>(List.of(contribScores)));
-        scores.add(new ArrayList<>(List.of(addedScores)));
-        scores.add(new ArrayList<>(List.of(currScores)));
+    int[][] getScores() {
+        int[][] scores = new int[numPlayers][4];
+        for (int i = 0; i < numPlayers; i++) {
+            scores[i][0] = prevScores[i];
+            scores[i][1] = contribScores[i];
+            scores[i][2] = addedScores[i];
+            scores[i][3] = currScores[i];
+        }
         return scores;
     }
 
