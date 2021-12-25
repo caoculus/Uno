@@ -235,36 +235,8 @@ class Game {
         return numPlayers;
     }
 
-    GameState getState() {
-        return state;
-    }
-
-    Card[] getHand(int player) {
-        return hands[player].getCards().toArray(new Card[0]);
-    }
-
-    Direction getDirection() {
-        return direction;
-    }
-
     int getActivePlayer() {
         return activePlayer;
-    }
-
-    Card[] getPlayableCards() {
-        return playableCards.toArray(new Card[0]);
-    }
-
-    Card getTopCard() {
-        return discardPile.peek();
-    }
-
-    boolean canCallUno() {
-        return canCallUno;
-    }
-
-    boolean canChallengeUno() {
-        return canChallengeUno;
     }
 
     int getLastPlayed() {
@@ -275,24 +247,60 @@ class Game {
         return lastAttacked;
     }
 
-    GameMove getLastMove() {
-        return lastMove;
+    int[][] getScores() {
+        return scoreboard.getScores();
+    }
+
+    boolean canCallUno() {
+        return canCallUno;
+    }
+
+    boolean canChallengeUno() {
+        return canChallengeUno;
     }
 
     boolean isGameOver() {
         return scoreboard.isGoalReached();
     }
 
-    Card[] getLastDrawnCards() {
-        return lastDrawnCards.toArray(new Card[0]);
-    }
-
     CardColor getActiveColor() {
         return discardPile.getWildColor();
     }
 
-    List<List<Integer>> getScores() {
-        return scoreboard.getScores();
+    Card getTopCard() {
+        return discardPile.peek();
+    }
+
+    Card[] getHand(int player) {
+        return hands[player].getCards().toArray(new Card[0]);
+    }
+
+    Card[] getPlayableCards() {
+        return playableCards.toArray(new Card[0]);
+    }
+
+    Card[] getLastDrawnCards() {
+        return lastDrawnCards.toArray(new Card[0]);
+    }
+
+    Card[][] getHands() {
+        Card[][] hands = new Card[numPlayers][];
+        for (int i = 0; i < numPlayers; i++) {
+            hands[i] = getHand(i);
+        }
+        return hands;
+    }
+
+    Direction getDirection() {
+        return direction;
+    }
+
+    GameState getState() {
+        return state;
+    }
+
+    GameMove getLastMove() {
+        return lastMove;
     }
 
     private void resetFlags() {
