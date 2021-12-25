@@ -12,7 +12,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.Arrays;
 
 public class UnoClient {
     private static final Gson GSON = new Gson();
@@ -21,14 +20,9 @@ public class UnoClient {
     private final BufferedReader reader;
     private final PrintWriter writer;
     private final String name;
-    private final Hand hand;
 
     private int id;
-    private int numPlayers;
-    private int[] cardCounts;
     private String[] names;
-    private Card topCard;
-    private CardColor wildColor;
 
     public UnoClient(String host, int port, String name) {
         try {
@@ -41,7 +35,6 @@ public class UnoClient {
             throw new RuntimeException(e);
         }
         this.name = name;
-        hand = new Hand();
     }
 
     public void start() {
@@ -79,9 +72,8 @@ public class UnoClient {
         JsonObject nameListJson = GSON.fromJson(line, JsonObject.class);
         JsonArray nameArray = nameListJson.getAsJsonArray("nameArray");
         System.out.println(nameListJson);
-        numPlayers = nameArray.size();
+        int numPlayers = nameArray.size();
         names = new String[numPlayers];
-        cardCounts = new int[numPlayers];
         for (int i = 0; i < numPlayers; i++) {
             names[i] = nameArray.get(i).getAsString();
         }
@@ -93,66 +85,103 @@ public class UnoClient {
             String line = reader.readLine();
             JsonObject json = GSON.fromJson(line, JsonObject.class);
             System.out.println(json);
-            String type = json.get("type").getAsString();
-            switch (type) {
-            case "dealCards" -> getStartCards(json);
-            case "roundStart" -> getRoundStart(json);
-            }
         }
     }
 
-    private void getStartCards(@NotNull JsonObject json) {
-        JsonArray cardArray = json.get("cardArray").getAsJsonArray();
-        for (int i = 0; i < cardArray.size(); i++) {
-            Card card = GSON.fromJson(cardArray.get(i), Card.class);
-            hand.add(card);
-        }
-        Arrays.fill(cardCounts, Game.INITIAL_HAND_SIZE);
-        sendConfirmation();
+    private void handleGame(GameData data) {
+        printGame(data);
     }
 
-    private void getRoundStart(@NotNull JsonObject json) {
-        topCard = GSON.fromJson(json.get("topCard"), Card.class);
-        switch (topCard.type()) {
-        case REVERSE -> reverse(json);
-        case SKIP -> skip(json);
-        case DRAW_TWO -> draw(json);
-        }
-        sendConfirmation();
+    private void printGame(GameData data) {
+        printPlayed(data);
+        printSpecial(data);
+        printDrawn(data);
     }
 
-    private void reverse(@NotNull JsonObject json) {
-        Direction direction =
-            GSON.fromJson(json.get("direction"), Direction.class);
-        System.out.println("The direction of play is now " + direction + ".");
-    }
-
-    private void skip(@NotNull JsonObject json) {
-        int skipped = json.get("skipped").getAsInt();
-        String skippedName = names[skipped];
-        System.out.println(skippedName + " was skipped.");
-    }
-
-    private void draw(@NotNull JsonObject json) {
-        int drew = json.get("drew").getAsInt();
-        Card[] drawnCards = GSON.fromJson(json.get("drawnCards"), Card[].class);
-        if (id == drew) {
-            for (Card card : drawnCards) {
-                System.out.println("You drew a " + card + ".");
-            }
-        } else {
-            int numCards = drawnCards.length;
-            String drewName = names[drew];
-            if (numCards == 1) {
-                System.out.println(drewName + " drew a card.");
-            } else {
+    private void printPlayed(@NotNull GameData data) {
+        GameMove lastMove = data.lastMove();
+        Card topCard = data.topCard();
+        int lastPlayed = data.lastPlayed();
+        switch (lastMove) {
+        case PLAY_CARD, DRAW_TWO, SKIP, REVERSE -> {
+            if (id == lastPlayed) {
+                System.out.println("You played a " + topCard + ".");
+            } else if (lastPlayed != -1) {
                 System.out.println(
-                    drewName + " drew " + numCards + " cards.");
+                    names[lastPlayed] + " played a " + topCard + ".");
             }
+        }
         }
     }
 
-    private void handlePlayCard() {
+    private void printSpecial(@NotNull GameData data) {
+        GameMove lastMove = data.lastMove();
+        CardColor wildColor = data.wildColor();
+        Direction direction = data.direction();
+        int lastPlayed = data.lastPlayed();
+        int lastAttacked = data.lastAttacked();
+        switch (lastMove) {
+        case SKIP -> {
+            if (id == lastAttacked) {
+                System.out.println("You were skipped.");
+            } else {
+                System.out.println(names[lastAttacked] + " was skipped.");
+            }
+        }
+        case REVERSE -> System.out.println(
+            "The play direction is now " + direction + ".");
+        case CHANGE_COLOR -> System.out.println(
+            "The color has been changed to " + wildColor + ".");
+        case DRAW_FOUR_CHALLENGE_FAIL, DRAW_FOUR_CHALLENGE_SUCCESS -> {
+            String lastAttackedName =
+                (id == lastAttacked) ? "You" : names[lastAttacked];
+            String lastPlayedName =
+                (id == lastPlayed) ? "your" : names[lastPlayed] + "'s";
+            System.out.print(lastAttackedName + " challenged " + lastPlayedName
+                + " draw four. ");
+            switch (lastMove) {
+            case DRAW_FOUR_CHALLENGE_FAIL -> System.out.println(
+                "Challenge failed!");
+            case DRAW_FOUR_CHALLENGE_SUCCESS -> System.out.println(
+                "Challenge successful!");
+            }
+        }
+        case CHALLENGE_UNO -> {
+            String lastPlayedName =
+                (id == lastPlayed) ? "You" : names[lastPlayed];
+            String lastAttackedName =
+                (id == lastPlayed) ? "you" : names[lastAttacked];
+            System.out.println(
+                lastPlayedName + " challenged " + lastAttackedName
+                    + " for not calling Uno!");
+        }
+        }
+    }
 
+    private void printDrawn(@NotNull GameData data) {
+        GameMove lastMove = data.lastMove();
+        int lastPlayed = data.lastPlayed();
+        int lastAttacked = data.lastAttacked();
+        Card[] lastDrawnCards = data.lastDrawnCards();
+        switch (lastMove) {
+        case DRAW_CARD, DRAW_TWO, DRAW_FOUR, DRAW_FOUR_CHALLENGE_FAIL,
+            DRAW_FOUR_CHALLENGE_SUCCESS, CHALLENGE_UNO -> {
+            int drew;
+            switch (lastMove) {
+            case DRAW_CARD, DRAW_FOUR_CHALLENGE_FAIL -> drew = lastPlayed;
+            default -> drew = lastAttacked;
+            }
+            if (id == drew) {
+                for (Card card : lastDrawnCards) {
+                    System.out.println("You drew a " + card + ".");
+                }
+            } else {
+                int numCards = lastDrawnCards.length;
+                String plural = (numCards == 1) ? "" : "s";
+                System.out.println(
+                    names[drew] + " drew " + numCards + " card" + plural + ".");
+            }
+        }
+        }
     }
 }
