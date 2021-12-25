@@ -239,16 +239,8 @@ class Game {
         return state;
     }
 
-    List<Card> getHand(int player) {
-        return hands[player].getCards();
-    }
-
-    List<List<Card>> getHands() {
-        List<List<Card>> hands = new ArrayList<>();
-        for (int i = 0; i < numPlayers; i++) {
-            hands.add(getHand(i));
-        }
-        return hands;
+    Card[] getHand(int player) {
+        return hands[player].getCards().toArray(new Card[0]);
     }
 
     Direction getDirection() {
@@ -259,8 +251,8 @@ class Game {
         return activePlayer;
     }
 
-    List<Card> getPlayableCards() {
-        return new ArrayList<>(playableCards);
+    Card[] getPlayableCards() {
+        return playableCards.toArray(new Card[0]);
     }
 
     Card getTopCard() {
@@ -291,8 +283,8 @@ class Game {
         return scoreboard.isGoalReached();
     }
 
-    List<Card> getLastDrawnCards() {
-        return new ArrayList<>(lastDrawnCards);
+    Card[] getLastDrawnCards() {
+        return lastDrawnCards.toArray(new Card[0]);
     }
 
     CardColor getActiveColor() {
