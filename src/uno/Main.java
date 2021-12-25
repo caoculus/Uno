@@ -1,8 +1,12 @@
 package uno;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
@@ -24,6 +28,7 @@ public class Main {
 //        BufferedReader reader =
 //            new BufferedReader(new InputStreamReader(System.in));
 //        while (!game.isGameOver()) {
+//            game.dealCards();
 //            game.startRound();
 //            while (game.getState() != GameState.ROUND_OVER) {
 //                printMoves(game);
@@ -36,14 +41,15 @@ public class Main {
 
     private static void printMoves(Game game) {
         int activePlayer = game.getActivePlayer();
-        List<Card> lastDrawnCards = game.getLastDrawnCards();
-        List<Card> playableCards = game.getPlayableCards();
+        Card[] lastDrawnCards = game.getLastDrawnCards();
+        Card[] playableCards = game.getPlayableCards();
         GameState state = game.getState();
         switch (state) {
         case PLAY_CARD -> {
             printGame(game);
             System.out.println(
-                "Player " + activePlayer + " can play: " + playableCards);
+                "Player " + activePlayer + " can play: " + Arrays.toString(
+                    playableCards));
             System.out.println("d to draw a card.");
             if (game.canCallUno()) {
                 System.out.println("u to call Uno.");
@@ -54,7 +60,7 @@ public class Main {
             }
         }
         case PLAY_DRAWN_CARD -> {
-            System.out.println("Play " + lastDrawnCards.get(0) + "? (y/n)");
+            System.out.println("Play " + lastDrawnCards[0] + "? (y/n)");
             if (game.canCallUno()) {
                 System.out.println("u to call Uno.");
             }
@@ -71,7 +77,7 @@ public class Main {
         int numPlayers = game.getNumPlayers();
         GameMove lastMove = game.getLastMove();
         Card topCard = game.getTopCard();
-        List<Card> lastDrawnCards = game.getLastDrawnCards();
+        Card[] lastDrawnCards = game.getLastDrawnCards();
         Direction direction = game.getDirection();
         CardColor activeColor = game.getActiveColor();
         switch (lastMove) {
@@ -100,16 +106,19 @@ public class Main {
         }
         switch (lastMove) {
         case DRAW_CARD, DRAW_FOUR_CHALLENGE_SUCCESS -> System.out.println(
-            "Player " + lastPlayed + " drew: " + lastDrawnCards + ".");
+            "Player " + lastPlayed + " drew: " + Arrays.toString(lastDrawnCards)
+                + ".");
         case DRAW_TWO, DRAW_FOUR, DRAW_FOUR_CHALLENGE_FAIL, CHALLENGE_UNO -> System.out.println(
-            "Player " + lastAttacked + " drew: " + lastDrawnCards + ".");
+            "Player " + lastAttacked + " drew: " + Arrays.toString(
+                lastDrawnCards) + ".");
         case SKIP -> System.out.println(
             "Player " + lastAttacked + " was skipped.");
         case REVERSE -> System.out.println(
             "The play direction is now " + direction + ".");
         }
         for (int i = 0; i < numPlayers; i++) {
-            System.out.println("Player " + i + ": " + game.getHand(i));
+            System.out.println(
+                "Player " + i + ": " + Arrays.toString(game.getHand(i)));
         }
         if (topCard.type().isWild()) {
             System.out.println(
@@ -176,7 +185,8 @@ public class Main {
                 case "y" -> game.playDrawnCard(true);
                 default -> done = false;
                 }
-            } case CHANGE_COLOR -> {
+            }
+            case CHANGE_COLOR -> {
                 switch (input) {
                 case "b" -> game.changeColor(CardColor.BLUE);
                 case "g" -> game.changeColor(CardColor.GREEN);

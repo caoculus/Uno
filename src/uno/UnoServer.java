@@ -2,6 +2,7 @@ package uno;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 
@@ -32,6 +33,7 @@ public class UnoServer {
     private final BlockingQueue<String> input;
     private final ExecutorService executor;
     private final AtomicBoolean errorFlag;
+    private final Game game;
 
     public UnoServer(int port, int numPlayers) {
         if (numPlayers < Game.MIN_PLAYERS || numPlayers > Game.MAX_PLAYERS) {
@@ -49,6 +51,7 @@ public class UnoServer {
         input = new LinkedBlockingQueue<>();
         executor = Executors.newFixedThreadPool(numPlayers);
         errorFlag = new AtomicBoolean(false);
+        game = new Game(numPlayers);
     }
 
     public void start() {
@@ -56,6 +59,7 @@ public class UnoServer {
             waitForConnections();
             sendIds();
             nameHandshake();
+            gameLoop();
             executor.shutdown();
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
@@ -108,10 +112,84 @@ public class UnoServer {
         }
         // send name list
         JsonObject nameListJson = new JsonObject();
-        JsonArray nameArray = GSON.toJsonTree(names).getAsJsonArray();
-        nameListJson.add("nameList", nameArray);
+        nameListJson.add("nameArray", GSON.toJsonTree(names));
         for (PrintWriter writer : writers) {
             writer.println(nameListJson);
         }
     }
+
+    private void gameLoop() throws InterruptedException {
+        while (!game.isGameOver()) {
+            game.dealCards();
+            sendStartCards();
+            game.startRound();
+            sendRoundStart();
+            while (!(game.getState() == GameState.ROUND_OVER)) {
+                switch (game.getState()) {
+                case PLAY_CARD -> {
+                    sendPlayCard();
+                }
+                }
+            }
+        }
+    }
+
+    private void awaitConfirmation() throws InterruptedException {
+        for (int i = 0; i < numPlayers; i++) {
+            while (true) {
+                String line = input.take();
+                JsonObject json = GSON.fromJson(line, JsonObject.class);
+                if (json.get("move").getAsString().equals("confirm")) {
+                    break;
+                }
+            }
+        }
+    }
+
+    private void sendStartCards() throws InterruptedException {
+        for (int i = 0; i < numPlayers; i++) {
+            PrintWriter writer = writers.get(i);
+            Card[] cards = game.getHand(i);
+            JsonObject cardJson = new JsonObject();
+            cardJson.add("type", new JsonPrimitive("dealCards"));
+            cardJson.add("cardArray", GSON.toJsonTree(cards));
+            writer.println(cardJson);
+        }
+        awaitConfirmation();
+    }
+
+    private void sendRoundStart() throws InterruptedException {
+        Card topCard = game.getTopCard();
+        JsonObject startJson = new JsonObject();
+        startJson.add("type", new JsonPrimitive("roundStart"));
+        startJson.add("topCard", new JsonPrimitive(GSON.toJson(topCard)));
+        switch (topCard.type()) {
+        case REVERSE -> {
+            Direction direction = game.getDirection();
+            startJson.add("direction",
+                new JsonPrimitive(GSON.toJson(direction)));
+        }
+        case SKIP -> {
+            int skipped = game.getLastAttacked();
+            startJson.add("skipped", new JsonPrimitive(skipped));
+        }
+        case DRAW_TWO -> {
+            Card[] drawnCards = game.getLastDrawnCards();
+            int drew = game.getLastAttacked();
+            startJson.add("drew", new JsonPrimitive(drew));
+            startJson.add("drawnCards", GSON.toJsonTree(drawnCards));
+        }
+        }
+        for (PrintWriter writer : writers) {
+            writer.println(startJson);
+        }
+        awaitConfirmation();
+    }
+
+    private void sendPlayCard() {
+        int activePlayer = game.getActivePlayer();
+        JsonObject playCardJson = new JsonObject();
+
+    }
+
 }
