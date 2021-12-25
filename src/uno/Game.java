@@ -46,36 +46,20 @@ class Game {
         scoreboard.reset();
         playableCards = new ArrayList<>();
         lastDrawnCards = new ArrayList<>();
-        state = GameState.DEAL_CARDS;
-    }
-
-    boolean dealCards() {
-        if (state != GameState.DEAL_CARDS) {
-            return false;
-        }
-        resetFlags();
-        activePlayer = RANDOM.nextInt(numPlayers);
-        for (Hand hand : hands) {
-            for (int i = 0; i < INITIAL_HAND_SIZE; i++) {
-                hand.add(drawPile.drawCard());
-            }
-        }
-        return true;
+        state = GameState.ROUND_START;
     }
 
     boolean startRound() {
         if (state != GameState.ROUND_START) {
             return false;
         }
-        Card topCard;
-        while ((topCard = drawPile.drawCard()).type()
-            == CardType.WILD_DRAW_FOUR) {
-            drawPile.add(topCard);
-        }
-        discardPile.add(topCard);
+        resetFlags();
+        activePlayer = RANDOM.nextInt(numPlayers);
+        dealCards();
         handleTopCard();
         return true;
     }
+
 
     boolean playCard(int index) {
         if (state != GameState.PLAY_CARD || index < 0
@@ -303,6 +287,20 @@ class Game {
         return lastMove;
     }
 
+    private void dealCards() {
+        for (Hand hand : hands) {
+            for (int i = 0; i < INITIAL_HAND_SIZE; i++) {
+                hand.add(drawPile.drawCard());
+            }
+        }
+        Card topCard;
+        while ((topCard = drawPile.drawCard()).type()
+            == CardType.WILD_DRAW_FOUR) {
+            drawPile.add(topCard);
+        }
+        discardPile.add(topCard);
+    }
+
     private void resetFlags() {
         direction = Direction.CW;
         lastMove = GameMove.PLAY_CARD;
@@ -433,6 +431,6 @@ class Game {
         for (Hand hand : hands) {
             drawPile.add(hand.clear());
         }
-        state = GameState.DEAL_CARDS;
+        state = GameState.ROUND_START;
     }
 }
