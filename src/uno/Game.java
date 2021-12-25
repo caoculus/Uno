@@ -142,14 +142,14 @@ class Game {
         return true;
     }
 
-    boolean challengeUno() {
+    boolean challengeUno(int player) {
         if (state != GameState.PLAY_CARD || !canChallengeUno) {
             return false;
         }
         drawCards(lastPlayed, 2);
         lastMove = GameMove.CHALLENGE_UNO;
         lastAttacked = lastPlayed;
-        lastPlayed = activePlayer;
+        lastPlayed = player;
         return true;
     }
 
@@ -176,8 +176,8 @@ class Game {
         lastAttacked = activePlayer;
         if (challenge) {
             Hand lastHand = hands[lastPlayed];
-            CardColor activeColor = discardPile.getWildColor();
-            if (lastHand.containsColor(activeColor)) {
+            CardColor wildColor = discardPile.getWildColor();
+            if (lastHand.containsColor(wildColor)) {
                 // successful challenge
                 drawCards(lastPlayed, 4);
                 lastMove = GameMove.DRAW_FOUR_CHALLENGE_SUCCESS;
@@ -247,7 +247,7 @@ class Game {
         return scoreboard.isGoalReached();
     }
 
-    CardColor getActiveColor() {
+    CardColor getWildColor() {
         return discardPile.getWildColor();
     }
 
