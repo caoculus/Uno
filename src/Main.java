@@ -1,4 +1,5 @@
-package uno;
+import uno.UnoClient;
+import uno.UnoServer;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -6,7 +7,7 @@ import java.util.Arrays;
 import java.util.Locale;
 
 public class Main {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         String host = "localhost";
         int port = 9000;
         int numPlayers = 2;
