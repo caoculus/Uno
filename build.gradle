@@ -25,6 +25,9 @@ task serverJar(type: Jar) {
     from(sourceSets.main.output) {
         include "uno/**"
     }
+    from(configurations.runtimeClasspath.collect {
+        zipTree(it)
+    }) {}
     manifest {
         attributes "Main-class": 'uno.ServerMain'
     }
@@ -35,6 +38,9 @@ task clientJar(type: Jar) {
     from(sourceSets.main.output) {
         include "uno/**"
     }
+    from(configurations.runtimeClasspath.collect {
+        zipTree(it)
+    }) {}
     manifest {
         attributes "Main-class": 'uno.ClientMain'
     }
