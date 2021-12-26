@@ -150,6 +150,7 @@ class Game {
         lastMove = GameMove.CHALLENGE_UNO;
         lastAttacked = lastPlayed;
         lastPlayed = player;
+        canChallengeUno = false;
         return true;
     }
 
@@ -330,10 +331,10 @@ class Game {
             skip();
             startTurn();
         }
-        case WILD -> state = GameState.CHANGE_COLOR;
-        case WILD_DRAW_FOUR -> {
+        case WILD, WILD_DRAW_FOUR -> {
+            canCallUno = false;
             state = GameState.CHANGE_COLOR;
-            isDrawFour = true;
+            isDrawFour = (topCard.type() == CardType.WILD_DRAW_FOUR);
         }
         default -> {
             advancePlayer();
