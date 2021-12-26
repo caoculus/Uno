@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Random;
 
 class Game {
-    // TODO: fix draw four challenge logic (wrong color right now)
     static final int INITIAL_HAND_SIZE = 7;
     static final int MIN_PLAYERS = 2;
     static final int MAX_PLAYERS = 10;
@@ -161,7 +160,7 @@ class Game {
         canChallengeUno = false;
     }
 
-    boolean changeColor(@NotNull CardColor color) {
+    void changeColor(@NotNull CardColor color) {
         if (state != GameState.CHANGE_COLOR) {
             throw new IllegalStateException("State is not CHANGE_COLOR");
         }
@@ -177,7 +176,6 @@ class Game {
         } else {
             startTurn();
         }
-        return true;
     }
 
     void challengeDrawFour(boolean challenge) {
@@ -187,8 +185,8 @@ class Game {
         lastAttacked = activePlayer;
         if (challenge) {
             Hand lastHand = hands[lastPlayed];
-            CardColor wildColor = discardPile.getWildColor();
-            if (lastHand.containsColor(wildColor)) {
+            CardColor beforeWildColor = discardPile.getBeforeWildColor();
+            if (lastHand.containsColor(beforeWildColor)) {
                 // successful challenge
                 drawCards(lastPlayed, 4);
                 lastMove = GameMove.DRAW_FOUR_CHALLENGE_SUCCESS;
