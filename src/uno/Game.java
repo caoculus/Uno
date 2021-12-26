@@ -13,7 +13,8 @@ class Game {
 
     private static final Random RANDOM = new Random();
 
-    private final int numPlayers;
+    public final int numPlayers;
+
     private final DrawPile drawPile;
     private final DiscardPile discardPile;
     private final Hand[] hands;
@@ -49,22 +50,23 @@ class Game {
         state = GameState.ROUND_START;
     }
 
-    boolean startRound() {
+    void startRound() {
         if (state != GameState.ROUND_START) {
-            return false;
+            throw new IllegalStateException("State is not ROUND_START");
         }
         resetFlags();
         activePlayer = RANDOM.nextInt(numPlayers);
         dealCards();
         handleTopCard();
-        return true;
     }
 
 
-    boolean playCard(int index) {
-        if (state != GameState.PLAY_CARD || index < 0
-            || index >= playableCards.size()) {
-            return false;
+    void playCard(int index) {
+        if (state != GameState.PLAY_CARD) {
+            throw new IllegalStateException("State is not PLAY_CARD");
+        }
+        if (index < 0 || index >= playableCards.size()) {
+            throw new IllegalArgumentException("Invalid index");
         }
         canChallengeUno = canCallUno;
         lastPlayed = activePlayer;
@@ -79,12 +81,11 @@ class Game {
         } else {
             handleTopCard();
         }
-        return true;
     }
 
-    boolean drawCard() {
+    void drawCard() {
         if (state != GameState.PLAY_CARD) {
-            return false;
+            throw new IllegalStateException("State is not PLAY_CARD");
         }
         canChallengeUno = false;
         lastPlayed = activePlayer;
@@ -100,12 +101,11 @@ class Game {
             advancePlayer();
             startTurn();
         }
-        return true;
     }
 
-    boolean playDrawnCard(boolean play) {
+    void playDrawnCard(boolean play) {
         if (state != GameState.PLAY_DRAWN_CARD) {
-            return false;
+            throw new IllegalStateException("State is not PLAY_DRAWN_CARD");
         }
         if (play) {
             canChallengeUno = canCallUno;
@@ -119,44 +119,53 @@ class Game {
             advancePlayer();
             startTurn();
         }
-        return true;
     }
 
-    boolean callUno() {
+    void callUno() {
         if (!(state == GameState.PLAY_CARD
-            || state == GameState.PLAY_DRAWN_CARD) || !canCallUno) {
-            return false;
+            || state == GameState.PLAY_DRAWN_CARD)) {
+            throw new IllegalStateException(
+                "State is not PLAY_CARD or PLAY_DRAWN_CARD");
+        }
+        if (!canCallUno) {
+            throw new IllegalStateException("canCallUno is false");
         }
         lastMove = GameMove.CALL_UNO;
         lastPlayed = activePlayer;
         canCallUno = false;
-        return true;
     }
 
-    boolean callLateUno() {
-        if (state != GameState.PLAY_CARD || !canChallengeUno) {
-            return false;
+    void callLateUno() {
+        if (state != GameState.PLAY_CARD) {
+            throw new IllegalStateException("State is not PLAY_CARD");
+        }
+        if (!canChallengeUno) {
+            throw new IllegalStateException("canChallengeUno is false");
         }
         lastMove = GameMove.CALL_UNO;
         canChallengeUno = false;
-        return true;
     }
 
-    boolean challengeUno(int id) {
-        if (state != GameState.PLAY_CARD || !canChallengeUno) {
-            return false;
+    void challengeUno(int id) {
+        if (state != GameState.PLAY_CARD) {
+            throw new IllegalStateException("State is not PLAY_CARD");
+        }
+        if (!canChallengeUno) {
+            throw new IllegalStateException("canChallengeUno is false");
         }
         drawCards(lastPlayed, 2);
         lastMove = GameMove.CHALLENGE_UNO;
         lastAttacked = lastPlayed;
         lastPlayed = id;
         canChallengeUno = false;
-        return true;
     }
 
     boolean changeColor(@NotNull CardColor color) {
-        if (state != GameState.CHANGE_COLOR || color == CardColor.NONE) {
-            return false;
+        if (state != GameState.CHANGE_COLOR) {
+            throw new IllegalStateException("State is not CHANGE_COLOR");
+        }
+        if (color == CardColor.NONE) {
+            throw new IllegalArgumentException("Color is NONE");
         }
         discardPile.setWildColor(color);
         lastMove = GameMove.CHANGE_COLOR;
@@ -170,9 +179,9 @@ class Game {
         return true;
     }
 
-    boolean challengeDrawFour(boolean challenge) {
+    void challengeDrawFour(boolean challenge) {
         if (state != GameState.CHALLENGE_DRAW_FOUR) {
-            return false;
+            throw new IllegalStateException("State is not CHALLENGE_DRAW_FOUR");
         }
         lastAttacked = activePlayer;
         if (challenge) {
@@ -195,29 +204,22 @@ class Game {
             advancePlayer();
         }
         startTurn();
-        return true;
     }
 
-    boolean resetRound() {
+    void resetRound() {
         if (state != GameState.ROUND_OVER) {
-            return false;
+            throw new IllegalStateException("State is not ROUND_OVER");
         }
         scoreboard.newRound();
         collectCards();
-        return true;
     }
 
-    boolean resetGame() {
+    void resetGame() {
         if (state != GameState.ROUND_OVER) {
-            return false;
+            throw new IllegalStateException("State is not ROUND_OVER");
         }
         scoreboard.reset();
         collectCards();
-        return true;
-    }
-
-    int getNumPlayers() {
-        return numPlayers;
     }
 
     int getActivePlayer() {
