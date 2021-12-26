@@ -142,14 +142,14 @@ class Game {
         return true;
     }
 
-    boolean challengeUno(int player) {
+    boolean challengeUno(int id) {
         if (state != GameState.PLAY_CARD || !canChallengeUno) {
             return false;
         }
         drawCards(lastPlayed, 2);
         lastMove = GameMove.CHALLENGE_UNO;
         lastAttacked = lastPlayed;
-        lastPlayed = player;
+        lastPlayed = id;
         canChallengeUno = false;
         return true;
     }
