@@ -19,6 +19,12 @@ class DiscardPile {
      * card is {@code CardColor.NONE}.
      */
     private CardColor wildColor;
+    /**
+     * The color of the pile (of the top card, or the wild color if the top
+     * card was wild, or {@code CardColor.NONE} if the pile was empty) before
+     * the last wild card was played.
+     */
+    private CardColor beforeWildColor;
 
     /**
      * Create a new discard pile.
@@ -26,6 +32,7 @@ class DiscardPile {
     DiscardPile() {
         cardStack = new Stack<>();
         wildColor = CardColor.NONE;
+        beforeWildColor = CardColor.NONE;
     }
 
     /**
@@ -39,10 +46,17 @@ class DiscardPile {
     }
 
     /**
-     * @return the active color of the pile
+     * @return the wild color of the pile
      */
     CardColor getWildColor() {
         return wildColor;
+    }
+
+    /**
+     * @return the color of the pile before the last wild card was played
+     */
+    CardColor getBeforeWildColor() {
+        return beforeWildColor;
     }
 
     /**
@@ -58,6 +72,18 @@ class DiscardPile {
      * @param card the card to add, not null
      */
     void add(@NotNull Card card) {
+        if (card.type().isWild()) {
+            if (cardStack.isEmpty()) {
+                beforeWildColor = CardColor.NONE;
+            } else {
+                Card topCard = cardStack.peek();
+                if (topCard.type().isWild()) {
+                    beforeWildColor = wildColor;
+                } else {
+                    beforeWildColor = topCard.color();
+                }
+            }
+        }
         cardStack.push(card);
     }
 
