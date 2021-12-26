@@ -259,8 +259,10 @@ public class UnoClient {
             System.out.printf("%s:%8d%8d%8d%8d\n", name, scores[i][0],
                 scores[i][1], scores[i][2], scores[i][3]);
         }
+        System.out.println();
         if (!data.isGameOver()) {
-            System.out.println("The next round will start soon.");
+            System.out.println("The next round is starting.");
+            System.out.println();
         }
     }
 
