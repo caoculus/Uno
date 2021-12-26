@@ -87,6 +87,7 @@ public class UnoClient {
     }
 
     private void gameLoop() throws IOException {
+        System.out.println("The game is starting.");
         while (true) {
             GameData data = getGameData();
             printGame(data);
@@ -134,6 +135,7 @@ public class UnoClient {
                 System.out.println(
                     names[lastPlayed] + " played a " + topCard + ".");
             }
+            System.out.println();
         }
         }
     }
@@ -170,6 +172,11 @@ public class UnoClient {
                 "Challenge successful!");
             }
         }
+        case CALL_UNO -> {
+            String lastPlayedName =
+                (id == lastPlayed) ? "You" : names[lastPlayed];
+            System.out.println(lastPlayedName + " called Uno.");
+        }
         case CHALLENGE_UNO -> {
             String lastPlayedName =
                 (id == lastPlayed) ? "You" : names[lastPlayed];
@@ -179,7 +186,11 @@ public class UnoClient {
                 lastPlayedName + " challenged " + lastAttackedName
                     + " for not calling Uno!");
         }
+        default -> {
+            return;
         }
+        }
+        System.out.println();
     }
 
     private void printDrawn(@NotNull GameData data) {
@@ -192,7 +203,7 @@ public class UnoClient {
             DRAW_FOUR_CHALLENGE_SUCCESS, CHALLENGE_UNO -> {
             int drew;
             switch (lastMove) {
-            case DRAW_CARD, DRAW_FOUR_CHALLENGE_FAIL -> drew = lastPlayed;
+            case DRAW_CARD, DRAW_FOUR_CHALLENGE_SUCCESS -> drew = lastPlayed;
             default -> drew = lastAttacked;
             }
             if (id == drew) {
@@ -205,6 +216,7 @@ public class UnoClient {
                 System.out.println(
                     names[drew] + " drew " + numCards + " card" + plural + ".");
             }
+            System.out.println();
         }
         }
     }
@@ -216,31 +228,39 @@ public class UnoClient {
             String name = names[otherId];
             int numCards = hands[otherId].length;
             String plural = (numCards == 1) ? "" : "s";
-            for (int j = name.length(); j < maxNameLen; i++) {
-                System.out.print(" ");
-            }
+//            for (int j = name.length(); j < maxNameLen; j++) {
+//                System.out.print(" ");
+//            }
             System.out.println(name + ": " + numCards + " card" + plural);
         }
         System.out.println("Top card: " + data.topCard());
         System.out.println("Direction: " + data.direction());
         System.out.println("Your cards: " + Arrays.toString(hands[id]));
+        System.out.println();
     }
 
     private void printScores(@NotNull GameData data) {
         String winner = names[data.lastPlayed()];
         int[][] scores = data.scores();
-        System.out.println(winner + " wins this round.");
+        if (data.isGameOver()) {
+            System.out.println(winner + " wins the game!");
+        } else {
+            System.out.println(winner + " wins this round.");
+        }
         for (int i = 0; i < maxNameLen; i++) {
             System.out.print(" ");
         }
-        System.out.println("    Prev Contrib   Added    Curr");
+        System.out.println("     Prev Contrib   Added    Curr");
         for (int i = 0; i < numPlayers; i++) {
             String name = names[i];
             for (int j = name.length(); j < maxNameLen; j++) {
                 System.out.print(" ");
             }
-            System.out.printf("%s:%8d%8d%8d%8d", name, scores[i][0],
+            System.out.printf("%s:%8d%8d%8d%8d\n", name, scores[i][0],
                 scores[i][1], scores[i][2], scores[i][3]);
+        }
+        if (!data.isGameOver()) {
+            System.out.println("The next round will start soon.");
         }
     }
 
@@ -297,6 +317,7 @@ public class UnoClient {
                 System.out.println("  c - Challenge Uno.");
             }
         }
+        System.out.println();
     }
 
     private void handleInput(@NotNull GameData data) throws IOException {
@@ -317,6 +338,23 @@ public class UnoClient {
                 return;
             }
             String input = userReader.readLine();
+            if (canCallUno && input.equals("u")) {
+                moveJson.add("move", new JsonPrimitive("callUno"));
+                break;
+            }
+            if (canChallengeUno) {
+                if (id == lastPlayed) {
+                    if (input.equals("u")) {
+                        moveJson.add("move", new JsonPrimitive("callLateUno"));
+                        break;
+                    }
+                } else {
+                    if (input.equals("c")) {
+                        moveJson.add("move", new JsonPrimitive("challengeUno"));
+                        break;
+                    }
+                }
+            }
             if (id == activePlayer) {
                 switch (state) {
                 case PLAY_CARD -> {
@@ -333,7 +371,7 @@ public class UnoClient {
                                 break inputLoop;
                             }
                         } catch (NumberFormatException e) {
-                            continue inputLoop;
+                            /* fall through */
                         }
                     }
                 }
@@ -378,25 +416,9 @@ public class UnoClient {
                     }
                 }
                 }
-                if (canCallUno && input.equals("u")) {
-                    moveJson.add("move", new JsonPrimitive("callUno"));
-                    break;
-                }
-            }
-            if (canChallengeUno) {
-                if (id == lastPlayed) {
-                    if (input.equals("u")) {
-                        moveJson.add("move", new JsonPrimitive("callLateUno"));
-                        break;
-                    }
-                } else {
-                    if (input.equals("c")) {
-                        moveJson.add("move", new JsonPrimitive("challengeUno"));
-                        break;
-                    }
-                }
             }
         }
         writer.println(moveJson);
+        System.out.println();
     }
 }

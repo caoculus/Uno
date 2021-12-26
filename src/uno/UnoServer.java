@@ -178,7 +178,7 @@ public class UnoServer {
             boolean play = moveJson.get("play").getAsBoolean();
             game.playDrawnCard(play);
         }
-        case "callUno" -> game.canCallUno();
+        case "callUno" -> game.callUno();
         case "callLateUno" -> game.callLateUno();
         case "challengeUno" -> {
             int id = moveJson.get("id").getAsInt();
