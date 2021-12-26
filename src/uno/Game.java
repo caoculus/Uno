@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Random;
 
 class Game {
+    // TODO: fix draw four challenge logic (wrong color right now)
     static final int INITIAL_HAND_SIZE = 7;
     static final int MIN_PLAYERS = 2;
     static final int MAX_PLAYERS = 10;
