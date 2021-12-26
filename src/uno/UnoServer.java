@@ -111,14 +111,14 @@ public class UnoServer {
         }
         // send name list
         JsonObject nameListJson = new JsonObject();
-        nameListJson.add("nameArray", GSON.toJsonTree(names));
+        nameListJson.add("names", new JsonPrimitive(GSON.toJson(names)));
         for (PrintWriter writer : writers) {
             writer.println(nameListJson);
         }
     }
 
     private void gameLoop() throws InterruptedException {
-        while (!game.isGameOver()) {
+        while (true) {
             game.startRound();
             while (game.getState() != GameState.ROUND_OVER) {
                 sendGameData();
@@ -128,6 +128,10 @@ public class UnoServer {
             }
             sendGameData();
             awaitConfirmation();
+            if (game.isGameOver()) {
+                break;
+            }
+            game.resetRound();
         }
     }
 
@@ -161,7 +165,35 @@ public class UnoServer {
         }
     }
 
-    private void awaitMove() {
-
+    private void awaitMove() throws InterruptedException {
+        String line = input.take();
+        JsonObject moveJson = GSON.fromJson(line, JsonObject.class);
+        String move = moveJson.get("move").getAsString();
+        switch (move) {
+        case "playCard" -> {
+            int index = moveJson.get("index").getAsInt();
+            game.playCard(index);
+        }
+        case "drawCard" -> game.drawCard();
+        case "playDrawnCard" -> {
+            boolean play = moveJson.get("play").getAsBoolean();
+            game.playDrawnCard(play);
+        }
+        case "callUno" -> game.canCallUno();
+        case "callLateUno" -> game.callLateUno();
+        case "challengeUno" -> {
+            int id = moveJson.get("id").getAsInt();
+            game.challengeUno(id);
+        }
+        case "changeColor" -> {
+            CardColor color =
+                GSON.fromJson(moveJson.get("color"), CardColor.class);
+            game.changeColor(color);
+        }
+        case "challengeDrawFour" -> {
+            boolean challenge = moveJson.get("challenge").getAsBoolean();
+            game.challengeDrawFour(challenge);
+        }
+        }
     }
 }

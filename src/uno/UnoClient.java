@@ -1,7 +1,6 @@
 package uno;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import org.jetbrains.annotations.NotNull;
@@ -12,35 +11,41 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.Arrays;
 
 public class UnoClient {
     private static final Gson GSON = new Gson();
 
     private final Socket socket;
-    private final BufferedReader reader;
+    private final BufferedReader userReader;
+    private final BufferedReader serverReader;
     private final PrintWriter writer;
-    private final String name;
+    private final String myName;
 
     private int id;
+    private int numPlayers;
+    private int maxNameLen;
     private String[] names;
 
-    public UnoClient(String host, int port, String name) {
+    public UnoClient(String host, int port, String myName) {
         try {
             socket = new Socket(host, port);
-            reader = new BufferedReader(
+            userReader = new BufferedReader(new InputStreamReader(System.in));
+            serverReader = new BufferedReader(
                 new InputStreamReader(socket.getInputStream()));
             writer = new PrintWriter(
                 new OutputStreamWriter(socket.getOutputStream()), true);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        this.name = name;
+        this.myName = myName;
     }
 
     public void start() {
         try {
             getId();
             nameHandshake();
+            gameLoop();
             socket.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -48,7 +53,7 @@ public class UnoClient {
     }
 
     private void getId() throws IOException {
-        String line = reader.readLine();
+        String line = serverReader.readLine();
         JsonObject idJson = GSON.fromJson(line, JsonObject.class);
         System.out.println(idJson);
         id = idJson.get("id").getAsInt();
@@ -65,37 +70,57 @@ public class UnoClient {
         // send name
         JsonObject nameJson = new JsonObject();
         nameJson.add("id", new JsonPrimitive(id));
-        nameJson.add("name", new JsonPrimitive(name));
+        nameJson.add("name", new JsonPrimitive(myName));
         writer.println(nameJson);
         // get name list
-        String line = reader.readLine();
-        JsonObject nameListJson = GSON.fromJson(line, JsonObject.class);
-        JsonArray nameArray = nameListJson.getAsJsonArray("nameArray");
-        System.out.println(nameListJson);
-        int numPlayers = nameArray.size();
-        names = new String[numPlayers];
+        String line = serverReader.readLine();
+        JsonObject namesJson = GSON.fromJson(line, JsonObject.class);
+        System.out.println(namesJson);
+        names = GSON.fromJson(namesJson.get("names"), String[].class);
+        numPlayers = names.length;
+        maxNameLen = 0;
         for (int i = 0; i < numPlayers; i++) {
-            names[i] = nameArray.get(i).getAsString();
+            if (i != id) {
+                maxNameLen = Math.max(maxNameLen, names[i].length());
+            }
         }
         sendConfirmation();
     }
 
     private void gameLoop() throws IOException {
         while (true) {
-            String line = reader.readLine();
-            JsonObject json = GSON.fromJson(line, JsonObject.class);
-            System.out.println(json);
+            GameData data = getGameData();
+            printGame(data);
+            sendConfirmation();
+            if (data.isGameOver()) {
+                break;
+            }
+            if (data.state() != GameState.ROUND_OVER) {
+                awaitStart();
+                if ((id == data.activePlayer()) || data.canChallengeUno()) {
+                    printMoves(data);
+                    handleInput(data);
+                }
+            }
         }
     }
 
-    private void handleGame(GameData data) {
-        printGame(data);
+    private GameData getGameData() throws IOException {
+        String line = serverReader.readLine();
+        JsonObject json = GSON.fromJson(line, JsonObject.class);
+        System.out.println(json);
+        return GSON.fromJson(json.get("gameData"), GameData.class);
     }
 
     private void printGame(GameData data) {
         printPlayed(data);
         printSpecial(data);
         printDrawn(data);
+        if (data.state() == GameState.ROUND_OVER) {
+            printScores(data);
+        } else if (id == data.activePlayer()) {
+            printBoard(data);
+        }
     }
 
     private void printPlayed(@NotNull GameData data) {
@@ -183,5 +208,195 @@ public class UnoClient {
             }
         }
         }
+    }
+
+    private void printBoard(@NotNull GameData data) {
+        Card[][] hands = data.hands();
+        for (int i = 1; i < numPlayers - 1; i++) {
+            int otherId = (id + i) % numPlayers;
+            String name = names[otherId];
+            int numCards = hands[otherId].length;
+            String plural = (numCards == 1) ? "" : "s";
+            for (int j = name.length(); j < maxNameLen; i++) {
+                System.out.print(" ");
+            }
+            System.out.println(name + ": " + numCards + " card" + plural);
+        }
+        System.out.println("Top card: " + data.topCard());
+        System.out.println("Direction: " + data.direction());
+        System.out.println("Your cards: " + Arrays.toString(hands[id]));
+    }
+
+    private void printScores(@NotNull GameData data) {
+        String winner = names[data.lastPlayed()];
+        int[][] scores = data.scores();
+        System.out.println(winner + " wins this round.");
+        for (int i = 0; i < maxNameLen; i++) {
+            System.out.print(" ");
+        }
+        System.out.println("    Prev Contrib   Added    Curr");
+        for (int i = 0; i < numPlayers; i++) {
+            String name = names[i];
+            for (int j = name.length(); j < maxNameLen; j++) {
+                System.out.print(" ");
+            }
+            System.out.printf("%s:%8d%8d%8d%8d", name, scores[i][0],
+                scores[i][1], scores[i][2], scores[i][3]);
+        }
+    }
+
+    private void awaitStart() throws IOException {
+        String line;
+        JsonObject json;
+        do {
+            line = serverReader.readLine();
+            json = GSON.fromJson(line, JsonObject.class);
+        } while (!json.get("type").getAsString().equals("start"));
+    }
+
+    private void printMoves(@NotNull GameData data) {
+        GameState state = data.state();
+        boolean canCallUno = data.canCallUno();
+        boolean canChallengeUno = data.canChallengeUno();
+        int activePlayer = data.activePlayer();
+        int lastPlayed = data.lastPlayed();
+        Card[] playableCards = data.playableCards();
+        if (id == activePlayer) {
+            switch (state) {
+            case PLAY_CARD -> {
+                for (int i = 1; i <= playableCards.length; i++) {
+                    System.out.printf("%3d - Play %s.\n", i, playableCards[i]);
+                }
+                System.out.println("  d - Draw a card.");
+            }
+            case PLAY_DRAWN_CARD -> {
+                System.out.println("  p - Play drawn card.");
+                System.out.println("  k - Keep drawn card.");
+            }
+            case CHANGE_COLOR -> {
+                System.out.println("Choose a new color:");
+                System.out.println("  b - Blue");
+                System.out.println("  g - Green");
+                System.out.println("  y - Yellow");
+                System.out.println("  r - Red");
+            }
+            case CHALLENGE_DRAW_FOUR -> {
+                System.out.println("Challenge draw four?");
+                System.out.println("  y - Yes");
+                System.out.println("  n - No");
+            }
+            }
+            if (canCallUno) {
+                System.out.println("  u - Call Uno.");
+            }
+        }
+        if (canChallengeUno) {
+            if (id == lastPlayed) {
+                System.out.println("  u - Call Uno (late).");
+            } else {
+                System.out.println("  c - Challenge Uno.");
+            }
+        }
+    }
+
+    private void handleInput(@NotNull GameData data) throws IOException {
+        GameState state = data.state();
+        boolean canCallUno = data.canCallUno();
+        boolean canChallengeUno = data.canChallengeUno();
+        int activePlayer = data.activePlayer();
+        int lastPlayed = data.lastPlayed();
+        Card[] playableCards = data.playableCards();
+        JsonObject moveJson = new JsonObject();
+        moveJson.add("id", new JsonPrimitive(id));
+        inputLoop:
+        while (true) {
+            while (!userReader.ready() && !serverReader.ready()) {
+                Thread.onSpinWait();
+            }
+            if (serverReader.ready()) {
+                return;
+            }
+            String input = userReader.readLine();
+            if (id == activePlayer) {
+                switch (state) {
+                case PLAY_CARD -> {
+                    if (input.equals("d")) {
+                        moveJson.add("move", new JsonPrimitive("drawCard"));
+                        break inputLoop;
+                    } else {
+                        try {
+                            int index = Integer.parseInt(input);
+                            if (index >= 0 && index < playableCards.length) {
+                                moveJson.add("move",
+                                    new JsonPrimitive("playCard"));
+                                moveJson.add("index", new JsonPrimitive(index));
+                                break inputLoop;
+                            }
+                        } catch (NumberFormatException e) {
+                            continue inputLoop;
+                        }
+                    }
+                }
+                case PLAY_DRAWN_CARD -> {
+                    switch (input) {
+                    case "p", "k" -> {
+                        moveJson.add("move",
+                            new JsonPrimitive("playDrawnCard"));
+                        boolean play = input.equals("p");
+                        moveJson.add("play", new JsonPrimitive(play));
+                        break inputLoop;
+                    }
+                    }
+                }
+                case CHANGE_COLOR -> {
+                    switch (input) {
+                    case "b", "g", "r", "y" -> {
+                        moveJson.add("move", new JsonPrimitive("changeColor"));
+                        switch (input) {
+                        case "b" -> moveJson.add("color",
+                            new JsonPrimitive(GSON.toJson(CardColor.BLUE)));
+                        case "g" -> moveJson.add("color",
+                            new JsonPrimitive(GSON.toJson(CardColor.GREEN)));
+                        case "r" -> moveJson.add("color",
+                            new JsonPrimitive(GSON.toJson(CardColor.RED)));
+                        case "y" -> moveJson.add("color",
+                            new JsonPrimitive(GSON.toJson(CardColor.YELLOW)));
+                        }
+                        break inputLoop;
+                    }
+                    }
+                }
+                case CHALLENGE_DRAW_FOUR -> {
+                    switch (input) {
+                    case "y", "n" -> {
+                        moveJson.add("move",
+                            new JsonPrimitive("challengeDrawFour"));
+                        boolean challenge = input.equals("y");
+                        moveJson.add("challenge", new JsonPrimitive(challenge));
+                        break inputLoop;
+                    }
+                    }
+                }
+                }
+                if (canCallUno && input.equals("u")) {
+                    moveJson.add("move", new JsonPrimitive("callUno"));
+                    break;
+                }
+            }
+            if (canChallengeUno) {
+                if (id == lastPlayed) {
+                    if (input.equals("u")) {
+                        moveJson.add("move", new JsonPrimitive("callLateUno"));
+                        break;
+                    }
+                } else {
+                    if (input.equals("c")) {
+                        moveJson.add("move", new JsonPrimitive("challengeUno"));
+                        break;
+                    }
+                }
+            }
+        }
+        writer.println(moveJson);
     }
 }
