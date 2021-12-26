@@ -104,7 +104,6 @@ public class UnoServer {
         // get names
         for (int i = 0; i < numPlayers; i++) {
             JsonObject nameJson = GSON.fromJson(input.take(), JsonObject.class);
-            System.out.println(nameJson);
             int id = nameJson.get("id").getAsInt();
             String name = nameJson.get("name").getAsString();
             names[id] = name;
@@ -186,8 +185,8 @@ public class UnoServer {
             game.challengeUno(id);
         }
         case "changeColor" -> {
-            CardColor color =
-                GSON.fromJson(moveJson.get("color"), CardColor.class);
+            CardColor color = GSON.fromJson(moveJson.get("color").getAsString(),
+                CardColor.class);
             game.changeColor(color);
         }
         case "challengeDrawFour" -> {

@@ -55,7 +55,6 @@ public class UnoClient {
     private void getId() throws IOException {
         String line = serverReader.readLine();
         JsonObject idJson = GSON.fromJson(line, JsonObject.class);
-        System.out.println(idJson);
         id = idJson.get("id").getAsInt();
     }
 
@@ -75,8 +74,8 @@ public class UnoClient {
         // get name list
         String line = serverReader.readLine();
         JsonObject namesJson = GSON.fromJson(line, JsonObject.class);
-        System.out.println(namesJson);
-        names = GSON.fromJson(namesJson.get("names"), String[].class);
+        names =
+            GSON.fromJson(namesJson.get("names").getAsString(), String[].class);
         numPlayers = names.length;
         maxNameLen = 0;
         for (int i = 0; i < numPlayers; i++) {
@@ -108,8 +107,8 @@ public class UnoClient {
     private GameData getGameData() throws IOException {
         String line = serverReader.readLine();
         JsonObject json = GSON.fromJson(line, JsonObject.class);
-        System.out.println(json);
-        return GSON.fromJson(json.get("gameData"), GameData.class);
+        return GSON.fromJson(json.get("gameData").getAsString(),
+            GameData.class);
     }
 
     private void printGame(GameData data) {
@@ -212,7 +211,7 @@ public class UnoClient {
 
     private void printBoard(@NotNull GameData data) {
         Card[][] hands = data.hands();
-        for (int i = 1; i < numPlayers - 1; i++) {
+        for (int i = 1; i < numPlayers; i++) {
             int otherId = (id + i) % numPlayers;
             String name = names[otherId];
             int numCards = hands[otherId].length;
@@ -264,8 +263,9 @@ public class UnoClient {
         if (id == activePlayer) {
             switch (state) {
             case PLAY_CARD -> {
-                for (int i = 1; i <= playableCards.length; i++) {
-                    System.out.printf("%3d - Play %s.\n", i, playableCards[i]);
+                for (int i = 0; i < playableCards.length; i++) {
+                    System.out.printf("%3d - Play %s.\n", i + 1,
+                        playableCards[i]);
                 }
                 System.out.println("  d - Draw a card.");
             }
@@ -325,7 +325,7 @@ public class UnoClient {
                         break inputLoop;
                     } else {
                         try {
-                            int index = Integer.parseInt(input);
+                            int index = Integer.parseInt(input) - 1;
                             if (index >= 0 && index < playableCards.length) {
                                 moveJson.add("move",
                                     new JsonPrimitive("playCard"));
