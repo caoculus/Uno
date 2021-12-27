@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Random;
 
 class Game {
-    // TODO: fix logic for wild card first
     static final int INITIAL_HAND_SIZE = 7;
     static final int MIN_PLAYERS = 2;
     static final int MAX_PLAYERS = 10;
@@ -174,7 +173,7 @@ class Game {
         if (isDrawFour) {
             isDrawFour = false;
             state = GameState.CHALLENGE_DRAW_FOUR;
-        } else {
+        } else if (lastPlayed != -1) {
             startTurn();
         }
     }
