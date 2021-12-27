@@ -292,8 +292,9 @@ public class UnoClient {
                 System.out.println("  d - Draw a card.");
             }
             case PLAY_DRAWN_CARD -> {
-                System.out.println("  p - Play drawn card.");
-                System.out.println("  k - Keep drawn card.");
+                Card lastDrawn = data.lastDrawnCards()[0];
+                System.out.println("  p - Play " + lastDrawn + ".");
+                System.out.println("  k - Keep " + lastDrawn + ".");
             }
             case CHANGE_COLOR -> {
                 System.out.println("Choose a new color:");
