@@ -233,9 +233,14 @@ public class UnoClient {
 //            }
             System.out.println(name + ": " + numCards + " card" + plural);
         }
+        System.out.println("Your cards:");
+        for (Card card : hands[id]) {
+            System.out.print("    ");
+            System.out.println(card);
+        }
+        System.out.println();
         System.out.println("Top card: " + data.topCard());
         System.out.println("Direction: " + data.direction());
-        System.out.println("Your cards: " + Arrays.toString(hands[id]));
         System.out.println();
     }
 
@@ -262,7 +267,6 @@ public class UnoClient {
         System.out.println();
         if (!data.isGameOver()) {
             System.out.println("The next round is starting.");
-            System.out.println();
         }
     }
 
