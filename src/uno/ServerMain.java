@@ -8,17 +8,11 @@ public class ServerMain {
     public static void main(String[] args) throws IOException {
         BufferedReader reader =
             new BufferedReader(new InputStreamReader(System.in));
-        while (true) {
-            try {
-                System.out.print("Enter number of players: ");
-                String input = reader.readLine();
-                int numPlayers = Integer.parseInt(input);
-                UnoServer server = new UnoServer(9000, numPlayers);
-                server.start();
-                break;
-            } catch (NumberFormatException e) {
-                /* fall through */
-            }
-        }
+        System.out.print("Enter port: ");
+        int port = Integer.parseInt(reader.readLine());
+        System.out.print("Enter number of players: ");
+        int numPlayers = Integer.parseInt(reader.readLine());
+        UnoServer server = new UnoServer(port, numPlayers);
+        server.start();
     }
 }

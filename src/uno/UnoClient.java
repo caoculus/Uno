@@ -79,9 +79,7 @@ public class UnoClient {
         numPlayers = names.length;
         maxNameLen = 0;
         for (int i = 0; i < numPlayers; i++) {
-            if (i != id) {
-                maxNameLen = Math.max(maxNameLen, names[i].length());
-            }
+            maxNameLen = Math.max(maxNameLen, names[i].length());
         }
         sendConfirmation();
     }
@@ -181,7 +179,7 @@ public class UnoClient {
             String lastPlayedName =
                 (id == lastPlayed) ? "You" : names[lastPlayed];
             String lastAttackedName =
-                (id == lastPlayed) ? "you" : names[lastAttacked];
+                (id == lastAttacked) ? "you" : names[lastAttacked];
             System.out.println(
                 lastPlayedName + " challenged " + lastAttackedName
                     + " for not calling Uno!");
@@ -228,16 +226,11 @@ public class UnoClient {
             String name = names[otherId];
             int numCards = hands[otherId].length;
             String plural = (numCards == 1) ? "" : "s";
-//            for (int j = name.length(); j < maxNameLen; j++) {
-//                System.out.print(" ");
-//            }
             System.out.println(name + ": " + numCards + " card" + plural);
         }
-        System.out.println("Your cards:");
-        for (Card card : hands[id]) {
-            System.out.print("    ");
-            System.out.println(card);
-        }
+        String cardsString = Arrays.toString(hands[id]);
+        System.out.println("Your cards: " + cardsString.substring(1,
+            cardsString.length() - 1));
         System.out.println();
         System.out.println("Top card: " + data.topCard());
         System.out.println("Direction: " + data.direction());
@@ -245,12 +238,22 @@ public class UnoClient {
     }
 
     private void printScores(@NotNull GameData data) {
-        String winner = names[data.lastPlayed()];
+        int lastPlayed = data.lastPlayed();
         int[][] scores = data.scores();
-        if (data.isGameOver()) {
-            System.out.println(winner + " wins the game!");
+        boolean isGameOver = data.isGameOver();
+        if (id == lastPlayed) {
+            if (isGameOver) {
+                System.out.println("You win the game!");
+            } else {
+                System.out.println("You win the round.");
+            }
         } else {
-            System.out.println(winner + " wins this round.");
+            String winner = names[data.lastPlayed()];
+            if (data.isGameOver()) {
+                System.out.println(winner + " wins the game!");
+            } else {
+                System.out.println(winner + " wins this round.");
+            }
         }
         for (int i = 0; i < maxNameLen; i++) {
             System.out.print(" ");
@@ -281,6 +284,7 @@ public class UnoClient {
 
     private void printMoves(@NotNull GameData data) {
         GameState state = data.state();
+        GameMove lastMove = data.lastMove();
         boolean canCallUno = data.canCallUno();
         boolean canChallengeUno = data.canChallengeUno();
         int activePlayer = data.activePlayer();
@@ -293,12 +297,16 @@ public class UnoClient {
                     System.out.printf("%3d - Play %s.\n", i + 1,
                         playableCards[i]);
                 }
-                System.out.println("  d - Draw a card.");
+                if (lastMove != GameMove.CALL_UNO) {
+                    System.out.println("  d - Draw a card.");
+                }
             }
             case PLAY_DRAWN_CARD -> {
                 Card lastDrawn = data.lastDrawnCards()[0];
                 System.out.println("  p - Play " + lastDrawn + ".");
-                System.out.println("  k - Keep " + lastDrawn + ".");
+                if (lastMove != GameMove.CALL_UNO) {
+                    System.out.println("  k - Keep " + lastDrawn + ".");
+                }
             }
             case CHANGE_COLOR -> {
                 System.out.println("Choose a new color:");
@@ -329,6 +337,7 @@ public class UnoClient {
 
     private void handleInput(@NotNull GameData data) throws IOException {
         GameState state = data.state();
+        GameMove lastMove = data.lastMove();
         boolean canCallUno = data.canCallUno();
         boolean canChallengeUno = data.canChallengeUno();
         int activePlayer = data.activePlayer();
@@ -366,8 +375,10 @@ public class UnoClient {
                 switch (state) {
                 case PLAY_CARD -> {
                     if (input.equals("d")) {
-                        moveJson.add("move", new JsonPrimitive("drawCard"));
-                        break inputLoop;
+                        if (lastMove != GameMove.CALL_UNO) {
+                            moveJson.add("move", new JsonPrimitive("drawCard"));
+                            break inputLoop;
+                        }
                     } else {
                         try {
                             int index = Integer.parseInt(input) - 1;
@@ -384,12 +395,19 @@ public class UnoClient {
                 }
                 case PLAY_DRAWN_CARD -> {
                     switch (input) {
-                    case "p", "k" -> {
+                    case "p" -> {
                         moveJson.add("move",
                             new JsonPrimitive("playDrawnCard"));
-                        boolean play = input.equals("p");
-                        moveJson.add("play", new JsonPrimitive(play));
+                        moveJson.add("play", new JsonPrimitive(true));
                         break inputLoop;
+                    }
+                    case "k" -> {
+                        if (lastMove != GameMove.CALL_UNO) {
+                            moveJson.add("move",
+                                new JsonPrimitive("playDrawnCard"));
+                            moveJson.add("play", new JsonPrimitive(false));
+                            break inputLoop;
+                        }
                     }
                     }
                 }
@@ -424,6 +442,7 @@ public class UnoClient {
                 }
                 }
             }
+            System.out.println("Invalid input, try again.");
         }
         writer.println(moveJson);
         System.out.println();

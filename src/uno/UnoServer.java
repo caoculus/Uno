@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class UnoServer {
     private static final Gson GSON = new Gson();
+    private static final boolean DEBUG = true;
 
     private final int numPlayers;
     private final ServerSocket serverSocket;
@@ -104,6 +105,9 @@ public class UnoServer {
         // get names
         for (int i = 0; i < numPlayers; i++) {
             JsonObject nameJson = GSON.fromJson(input.take(), JsonObject.class);
+            if (DEBUG) {
+                System.out.println(nameJson);
+            }
             int id = nameJson.get("id").getAsInt();
             String name = nameJson.get("name").getAsString();
             names[id] = name;
@@ -113,6 +117,9 @@ public class UnoServer {
         nameListJson.add("names", new JsonPrimitive(GSON.toJson(names)));
         for (PrintWriter writer : writers) {
             writer.println(nameListJson);
+        }
+        if (DEBUG) {
+            System.out.println(nameListJson);
         }
     }
 
@@ -139,6 +146,9 @@ public class UnoServer {
             while (true) {
                 String line = input.take();
                 JsonObject json = GSON.fromJson(line, JsonObject.class);
+                if (DEBUG) {
+                    System.out.println(json);
+                }
                 if (json.get("move").getAsString().equals("confirm")) {
                     break;
                 }
@@ -154,6 +164,9 @@ public class UnoServer {
         for (PrintWriter writer : writers) {
             writer.println(gameJson);
         }
+        if (DEBUG) {
+            System.out.println(gameJson);
+        }
     }
 
     private void sendStart() {
@@ -162,11 +175,17 @@ public class UnoServer {
         for (PrintWriter writer : writers) {
             writer.println(startJson);
         }
+        if (DEBUG) {
+            System.out.println(startJson);
+        }
     }
 
     private void awaitMove() throws InterruptedException {
         String line = input.take();
         JsonObject moveJson = GSON.fromJson(line, JsonObject.class);
+        if (DEBUG) {
+            System.out.println(moveJson);
+        }
         String move = moveJson.get("move").getAsString();
         switch (move) {
         case "playCard" -> {

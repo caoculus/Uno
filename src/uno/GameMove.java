@@ -2,6 +2,7 @@ package uno;
 
 enum GameMove {
     PLAY_CARD,
+    KEEP_CARD,
     DRAW_CARD,
     DRAW_TWO,
     SKIP,

@@ -131,7 +131,6 @@ class Game {
         handleTopCard();
     }
 
-
     /**
      * Have the active player play a card.
      *
@@ -170,6 +169,10 @@ class Game {
         if (state != GameState.PLAY_CARD) {
             throw new IllegalStateException("State is not PLAY_CARD");
         }
+        if (lastMove == GameMove.CALL_UNO) {
+            throw new IllegalStateException(
+                "Cannot draw card after calling Uno.");
+        }
         canChallengeUno = false;
         lastPlayed = activePlayer;
         lastMove = GameMove.DRAW_CARD;
@@ -196,6 +199,10 @@ class Game {
         if (state != GameState.PLAY_DRAWN_CARD) {
             throw new IllegalStateException("State is not PLAY_DRAWN_CARD");
         }
+        if (lastMove == GameMove.CALL_UNO && !play) {
+            throw new IllegalStateException(
+                "Cannot keep card after calling Uno.");
+        }
         if (play) {
             canChallengeUno = canCallUno;
             lastMove = GameMove.PLAY_CARD;
@@ -205,6 +212,7 @@ class Game {
             discardPile.add(drawnCard);
             handleTopCard();
         } else {
+            lastMove = GameMove.KEEP_CARD;
             advancePlayer();
             startTurn();
         }
